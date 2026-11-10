@@ -255,6 +255,53 @@ nav{margin-left:8px}
 .fadeout{animation:fadeout 1.5s ease-in forwards}
 @keyframes fadeout{0%{opacity:1}60%{opacity:.8}100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.fadeout{animation:none}}
+
+/* ---------- v4: hype callouts + today's leaders ---------- */
+.rightcol{display:flex;flex-direction:column;gap:10px}
+.leaders{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.leaders h3{margin:2px 0 6px}
+.lb{margin-bottom:8px}
+.lb .lt{font-size:13px;color:var(--muted);font-weight:600;margin-bottom:2px}
+.lb .lr{display:flex;justify-content:space-between;align-items:baseline;font-size:16px;padding:2px 0}
+.lb .lr b{font-family:var(--head);font-weight:800;font-size:19px}
+.lb .lr .rk{color:var(--gold);font-family:var(--head);font-weight:800;margin-right:6px}
+.lb .lr span:last-child{color:var(--muted);font-size:14px}
+.lb .none{font-size:14px;color:var(--muted)}
+.bchips{display:flex;flex-wrap:wrap;gap:5px}
+.bchip{background:var(--panel2);border-radius:8px;padding:4px 8px;font-size:14px;font-weight:600}
+.pbtn .pn{white-space:nowrap}
+.pn .fl{font-size:.8em;margin-left:4px}
+.pbtn.fire{background:linear-gradient(180deg,rgba(255,122,26,.28),var(--panel2));box-shadow:0 0 18px rgba(255,122,26,.7)}
+.pbtn.hot{border-color:#ff7a1a;box-shadow:0 0 12px rgba(255,122,26,.45)}
+.pbtn.hot.on{border-color:var(--gold)}
+#hype{position:fixed;inset:0;z-index:60;pointer-events:none;display:grid;place-items:center;opacity:0;visibility:hidden}
+#hype.on{visibility:visible;animation:hypeIn var(--dur,2.4s) ease-out forwards}
+#hype.big{background:radial-gradient(circle at 50% 50%,rgba(43,21,82,.92) 0%,rgba(19,11,34,.88) 60%,rgba(19,11,34,.7) 100%)}
+#hype.small{place-items:start center;padding-top:calc(90px + env(safe-area-inset-top))}
+.hy{text-align:center;font-family:var(--head);line-height:.95;text-transform:uppercase}
+.hy .ic{font-size:110px;line-height:1}
+.hy .nm{font-weight:800;font-size:clamp(70px,11vw,170px);letter-spacing:.01em;color:#fff}
+.hy .tt{font-weight:800;font-size:clamp(56px,8vw,130px);background:linear-gradient(180deg,#ffe066,#ff7a1a 55%,#e8361a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hy.green .tt{background:linear-gradient(180deg,#b9f6cf,#22c55e)}
+.hy.sniper .tt{background:linear-gradient(180deg,#fff,#b79bff 60%,#8a5cff)}
+.hy.auto .tt{background:linear-gradient(180deg,#fff3c4,#f5c542)}
+.hy .sb{font-family:var(--body);font-weight:600;font-size:clamp(18px,2vw,28px);color:var(--muted);text-transform:none;margin-top:14px}
+#hype.small .hy{background:linear-gradient(90deg,#ff7a1a,#e8361a);border-radius:16px;padding:10px 26px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+#hype.small .hy .ic{display:inline;font-size:38px}
+#hype.small .hy .nm,#hype.small .hy .tt{display:inline;font-size:44px;color:#fff;background:none;-webkit-background-clip:initial;background-clip:initial}
+#hype.small .hy .sb{display:none}
+@keyframes hypeIn{0%{opacity:0;transform:scale(.85)}12%{opacity:1;transform:scale(1.04)}20%{transform:scale(1)}82%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){#hype.on{animation:hypeFade var(--dur,2.4s) linear forwards}}
+@keyframes hypeFade{0%{opacity:0}8%{opacity:1}85%{opacity:1}100%{opacity:0}}
+.badgerow{display:flex;flex-wrap:wrap;gap:8px;margin:-2px 0 12px}
+.badgerow .bchip{font-size:15px;padding:6px 11px}
+
+.modeseg{display:inline-flex;margin-left:8px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+.modeseg button{background:transparent;border:none;border-radius:7px;padding:6px 11px;font-weight:600;font-size:14px;color:var(--muted);white-space:nowrap}
+.modeseg button.on{background:var(--purple);color:#fff}
+body:not(.board) #soundBtn,body:not(.board) #leaders{display:none}
+body.board .lb .lr{font-size:18px}
+body.board .lb .lr b{font-size:22px}
 </style>
 </head>
 <body>
@@ -265,6 +312,8 @@ nav{margin-left:8px}
     <div class="sub" id="subLbl">Westbrook Knights practice shooting</div>
   </div>
   <button class="sync off" id="sync" title="Click to save now">Drive not connected</button>
+  <div class="modeseg" role="group" aria-label="Display mode"><button data-mode="laptop">MacBook</button><button data-mode="board">Smart board</button></div>
+  <button class="fsbtn" id="soundBtn">Sound on</button>
   <button class="fsbtn" id="fsBtn">Full screen</button>
   <nav id="nav" aria-label="Sections">
     <button data-v="track" class="on">Track</button>
@@ -303,10 +352,13 @@ nav{margin-left:8px}
           <div class="shortcuts">Spot, then make or miss, then the shooter.<kbd>M</kbd>make<kbd>N</kbd>miss<kbd>F</kbd>free throws on/off<kbd>T</kbd>switch 2/3<kbd>Z</kbd>undo</div>
         </div>
       </div>
-      <aside class="rosterpanel">
-        <h3 id="rosterTitle">Shooters</h3>
-        <div class="roster" id="roster"></div>
-      </aside>
+      <div class="rightcol">
+        <aside class="rosterpanel">
+          <h3 id="rosterTitle">Shooters</h3>
+          <div class="roster" id="roster"></div>
+        </aside>
+        <section class="leaders" id="leaders"></section>
+      </div>
     </div>
   </section>
 
@@ -316,12 +368,13 @@ nav{margin-left:8px}
   <section id="v-setup" class="view"></section>
 </main>
 <div id="toast" role="status" aria-live="polite"></div>
+<div id="hype" aria-live="polite"></div>
 
 <script>
 (function(){
 'use strict';
 /* Paste the Google Apps Script web app URL between the quotes below. */
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwM4FDu3pCFbxILVwDoa6SqpF0j-Qc7QzFAPPCdEqNtGOO9UC1VNPp9WPWUVrWvRiB_CA/exec';
+const SHEET_URL = '';
 
 const LS='knightsShotTracker_v2';
 const DEFAULT_ROSTER=['Greg','Ryan','Griffin','Anthony','Tavin','Dylan','Drew','Josh','Jason'];
@@ -343,13 +396,13 @@ const shortDay=k=>{const p=k.split('-');return (+p[1])+'/'+(+p[2]);};
 const timeOf=t=>new Date(t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
 
 /* ---------- storage ---------- */
-function fresh(){return {players:DEFAULT_ROSTER.map((n,i)=>({id:'p'+(i+1),name:n,active:true})),shots:[],pendingDeletes:[],playersDirty:true,rosterFresh:true,settings:{green:33,min:10,window:14,sheetUrl:'',manager:'Reagan'}};}
+function fresh(){return {players:DEFAULT_ROSTER.map((n,i)=>({id:'p'+(i+1),name:n,active:true})),shots:[],pendingDeletes:[],playersDirty:true,rosterFresh:true,settings:{green:33,min:10,window:14,sheetUrl:'',manager:'Reagan',sound:true,mode:'laptop'}};}
 function load(){
   try{
     const r=JSON.parse(localStorage.getItem(LS));
     if(r&&Array.isArray(r.players)){
       r.shots=Array.isArray(r.shots)?r.shots:[];r.pendingDeletes=Array.isArray(r.pendingDeletes)?r.pendingDeletes:[];
-      r.settings=Object.assign({green:33,min:10,window:14,sheetUrl:'',manager:'Reagan'},r.settings||{});return r;
+      r.settings=Object.assign({green:33,min:10,window:14,sheetUrl:'',manager:'Reagan',sound:true,mode:'laptop'},r.settings||{});return r;
     }
   }catch(e){}
   return fresh();
@@ -435,7 +488,7 @@ function show(v){
   render();window.scrollTo(0,0);
 }
 function renderMgr(){const m=mgr();$('#subLbl').textContent=m?`Tracked by ${m}, team manager`:'Westbrook Knights practice shooting';}
-function render(){renderMgr();({track:renderTrack,stats:renderStats,clubs:renderClubs,player:renderPlayer,setup:renderSetup})[view]();updateSync();}
+function render(){renderMgr();renderSound();renderMode();({track:renderTrack,stats:renderStats,clubs:renderClubs,player:renderPlayer,setup:renderSetup})[view]();updateSync();}
 
 /* ---------- TRACK ---------- */
 let pending=null,pendingMade=null,ftMode=false,lastLogged=null,justLogged=null,justT=null;
@@ -451,8 +504,11 @@ function renderTrack(){
   const act=S.players.filter(p=>p.active);
   $('#roster').innerHTML=act.map(p=>{
     const a=agg(today.filter(s=>s.p===p.id));
-    return `<button class="pbtn" data-pick="${p.id}"><span class="pn">${esc(p.name)}</span><span class="ps">3s ${a.m3}/${a.a3} &nbsp; 2s ${a.m2}/${a.a2}</span><span class="ps">FT ${a.mf}/${a.af}</span></button>`;
+    const st=runEnd(today.filter(s=>s.p===p.id&&s.type!=='FT'));
+    const fl=st>=3?'<span class="fl">🔥</span>':'';
+    return `<button class="pbtn${st>=5?' hot fire':st>=3?' hot':''}" data-pick="${p.id}"><span class="pn">${esc(p.name)}${fl}</span><span class="ps">3s ${a.m3}/${a.a3} &nbsp; 2s ${a.m2}/${a.a2}</span><span class="ps">FT ${a.mf}/${a.af}</span></button>`;
   }).join('')||'<div class="empty">No active players. Add or activate players in Setup.</div>';
+  renderLeaders(today);
   const flash=justLogged&&justLogged.type!=='FT'?`<g class="fadeout">${dotSVG(justLogged.X,justLogged.Y,justLogged.made)}</g>`:'';
   $('#dots').innerHTML=flash+
     (pending&&!ftMode?`<circle class="pendmark" cx="${pending.X}" cy="${pending.Y}" r="1.1"/>`:'');
@@ -499,7 +555,9 @@ function pickPlayer(pid){
   const now=new Date();
   const base=ftMode?{type:'FT',X:null,Y:null,d:null,lat:null}:{type:pending.type,X:pending.X,Y:pending.Y,d:pending.d,lat:pending.lat};
   const shot=Object.assign({id:uid(),p:pid,made:pendingMade,t:now.getTime(),day:dayKey(now),synced:false},base);
+  const wasGreen=club(pid).status==='green';
   S.shots.push(shot);save();
+  detectHype(shot,wasGreen);
   lastLogged=shot;justLogged=shot;clearTimeout(justT);justT=setTimeout(()=>{justLogged=null;if(view==='track')renderTrack();},1600);
   const made=pendingMade;pending=null;pendingMade=null;
   const w=$('#courtwrap');w.classList.remove('flash-make','flash-miss');void w.offsetWidth;w.classList.add(made?'flash-make':'flash-miss');
@@ -507,6 +565,86 @@ function pickPlayer(pid){
   renderTrack();scheduleSync();
   const n=S.shots.length;
   if(MILESTONES.includes(n)){const m=mgr();toast(`${m?m+', that':'That'}'s ${n.toLocaleString()} shots logged this season!`);}
+}
+/* ---------- streaks, badges, callouts ---------- */
+function byTime(a,b){return a.t-b.t;}
+function runEnd(sh){const s=sh.slice().sort(byTime);let c=0;for(let i=s.length-1;i>=0;i--){if(s[i].made)c++;else break;}return c;}
+function runMax(sh){const s=sh.slice().sort(byTime);let c=0,m=0;for(const x of s){c=x.made?c+1:0;if(c>m)m=c;}return m;}
+const awarded=new Set();
+function detectHype(shot,wasGreen){
+  if(S.settings.mode!=='board')return;
+  const pid=shot.p,day=shot.day,mine=S.shots.filter(s=>s.p===pid&&s.day===day);
+  const key=b=>day+'|'+pid+'|'+b;
+  const once=b=>{if(awarded.has(key(b)))return false;awarded.add(key(b));return true;};
+  const ev=[];
+  if(shot.made&&shot.type!=='FT'){
+    const st=runEnd(mine.filter(s=>s.type!=='FT'));
+    if(st===3)ev.push('heat');else if(st===5)ev.push('fire');else if(st===10)ev.push('unstop');
+    if(shot.type==='3'&&mine.filter(s=>s.type==='3'&&s.made).length===5&&once('sniper'))ev.push('sniper');
+  }
+  if(shot.made&&shot.type==='FT'&&runEnd(mine.filter(s=>s.type==='FT'))===10&&once('auto'))ev.push('auto');
+  if(shot.type==='3'&&!wasGreen&&club(pid).status==='green')ev.push('green');
+  ev.forEach(e=>queueHype(e,pname(pid)));
+}
+const HYPE={
+  heat:{small:true,ic:'🔥',tt:'is heating up',lines:['{n} is heating up!','{n}, heating up!','Here comes {n}!']},
+  fire:{ic:'🔥',tt:'is on fire',sb:'5 straight makes',lines:['{n} is on fire!','{n} is ON FIRE!','Somebody stop {n}! He is on fire!']},
+  unstop:{ic:'🔥',tt:'can’t miss',sb:'10 straight makes',lines:['{n} cannot miss!','Ten in a row for {n}! Unbelievable!']},
+  sniper:{cls:'sniper',ic:'🎯',tt:'Sniper',sb:'5 threes made today',lines:['Sniper! {n} has five threes today!','{n} is a sniper from deep!']},
+  auto:{cls:'auto',ic:'💯',tt:'Automatic',sb:'10 straight free throws',lines:['Automatic! Ten straight free throws for {n}!','{n} is automatic at the line!']},
+  green:{cls:'green',ic:'🟢',tt:'Green Club',sb:'Welcome to the Green Club',lines:['{n} just made the Green Club!','Green light for {n}! Welcome to the Green Club!']}
+};
+const hypeQ=[];let hypeBusy=false;
+function queueHype(kind,name){hypeQ.push({kind,name});if(!hypeBusy)nextHype();}
+function nextHype(){
+  const it=hypeQ.shift();const el=$('#hype');
+  if(!it){hypeBusy=false;el.className='';el.innerHTML='';return;}
+  hypeBusy=true;const h=HYPE[it.kind];const dur=h.small?1.8:2.6;
+  el.className='';void el.offsetWidth;
+  el.style.setProperty('--dur',dur+'s');
+  el.innerHTML=`<div class="hy ${h.cls||''}"><div class="ic">${h.ic}</div> <div class="nm">${esc(it.name)}</div> <div class="tt">${h.tt}</div>${h.sb?`<div class="sb">${h.sb}</div>`:''}</div>`;
+  el.className='on '+(h.small?'small':'big');
+  say(h.lines[Math.floor(Math.random()*h.lines.length)].replace('{n}',it.name));
+  setTimeout(nextHype,dur*1000);
+}
+let voice=null;
+function pickVoice(){
+  if(!('speechSynthesis' in window))return;
+  const vs=speechSynthesis.getVoices();
+  const pref=['Daniel','Alex','Aaron','Fred','Google US English','Samantha'];
+  voice=pref.map(n=>vs.find(v=>v.name.indexOf(n)===0&&/^en/i.test(v.lang))).find(Boolean)||vs.find(v=>/^en-US/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang))||null;
+}
+if('speechSynthesis' in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice;}
+function say(t){
+  if(!S.settings.sound||!('speechSynthesis' in window))return;
+  try{const u=new SpeechSynthesisUtterance(t);if(voice)u.voice=voice;u.rate=1.08;u.pitch=.9;u.volume=1;speechSynthesis.speak(u);}catch(e){}
+}
+function renderMode(){const b=S.settings.mode==='board';document.body.classList.toggle('board',b);document.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('on',x.dataset.mode===S.settings.mode));}
+function renderSound(){$('#soundBtn').textContent=S.settings.sound?'Sound on':'Sound off';}
+function renderLeaders(today){
+  const act=S.players.filter(p=>p.active);
+  const rows=act.map(p=>{const sh=today.filter(s=>s.p===p.id);const fg=sh.filter(s=>s.type!=='FT');
+    return {p,a:agg(sh),cur:runEnd(fg),best:runMax(fg),ftBest:runMax(sh.filter(s=>s.type==='FT'))};});
+  const lr=(r,i,val,sub)=>`<div class="lr"><span><span class="rk">${i+1}</span><b>${esc(r.p.name)}</b></span><span>${val}${sub?' '+sub:''}</span></div>`;
+  const threes=rows.filter(r=>r.a.m3>0).sort((x,y)=>y.a.m3-x.a.m3||(y.a.m3/y.a.a3)-(x.a.m3/x.a.a3)).slice(0,3);
+  const fgp=rows.filter(r=>r.a.a>=8).sort((x,y)=>(y.a.m/y.a.a)-(x.a.m/x.a.a)).slice(0,3);
+  const hot=rows.filter(r=>r.cur>=3).sort((x,y)=>y.cur-x.cur);
+  const badges=[];
+  rows.forEach(r=>{if(r.best>=5)badges.push(`🔥 ${esc(r.p.name)} (On fire)`);if(r.a.m3>=5)badges.push(`🎯 ${esc(r.p.name)} (Sniper)`);if(r.ftBest>=10)badges.push(`💯 ${esc(r.p.name)} (Automatic)`);});
+  $('#leaders').innerHTML=`<h3>Today’s leaders</h3>
+    <div class="lb"><div class="lt">Threes made</div>${threes.length?threes.map((r,i)=>lr(r,i,`<b>${r.a.m3}</b>`,`of ${r.a.a3}`)).join(''):'<div class="none">No threes made yet</div>'}</div>
+    <div class="lb"><div class="lt">Shooting % (8+ shots)</div>${fgp.length?fgp.map((r,i)=>lr(r,i,`<b>${Math.round(r.a.m/r.a.a*100)}%</b>`,'')).join(''):'<div class="none">Not enough shots yet</div>'}</div>
+    <div class="lb"><div class="lt">Hot right now</div>${hot.length?`<div class="bchips">${hot.map(r=>`<span class="bchip">🔥 ${esc(r.p.name)} ${r.cur} straight</span>`).join('')}</div>`:'<div class="none">Nobody yet</div>'}</div>
+    <div class="lb" style="margin-bottom:0"><div class="lt">Badges today</div>${badges.length?`<div class="bchips">${badges.map(b=>`<span class="bchip">${b}</span>`).join('')}</div>`:'<div class="none">None yet</div>'}</div>`;
+}
+function seasonBadges(pid){
+  const out={fire:0,sniper:0,auto:0};
+  const days=[...new Set(S.shots.filter(s=>s.p===pid).map(s=>s.day))];
+  days.forEach(d=>{const sh=S.shots.filter(s=>s.p===pid&&s.day===d);
+    if(runMax(sh.filter(s=>s.type!=='FT'))>=5)out.fire++;
+    if(sh.filter(s=>s.type==='3'&&s.made).length>=5)out.sniper++;
+    if(runMax(sh.filter(s=>s.type==='FT'))>=10)out.auto++;});
+  return out;
 }
 function removeShots(pred){
   const gone=S.shots.filter(pred);
@@ -645,6 +783,7 @@ function renderPlayer(){
       <div class="scard"><div class="k">FT</div><div class="v">${pc(a.mf,a.af)}</div><div class="s">${a.mf} of ${a.af}</div></div>
       <div class="scard"><div class="k">Club, last ${w} days</div><div class="v" style="font-size:24px;padding-top:6px">${badge(c)}</div><div class="s">${c.a?Math.round(c.p)+'% on '+c.a+' threes':'No threes yet'}</div></div>
     </div>
+    ${(()=>{const b=seasonBadges(plId);const c=[];if(b.fire)c.push(`🔥 On fire ×${b.fire}`);if(b.sniper)c.push(`🎯 Sniper ×${b.sniper}`);if(b.auto)c.push(`💯 Automatic ×${b.auto}`);return `<div class="badgerow"><span class="muted" style="align-self:center">Season badges:</span>${c.length?c.map(x=>`<span class="bchip">${x}</span>`).join(''):'<span class="muted" style="align-self:center">none yet</span>'}</div>`;})()}
     <div class="pgrid">
       <div class="box"><h3>Shot chart</h3>${halfCourtSVG(sh)}
         <div class="legend"><span><i style="background:var(--green)"></i>Make</span><span><i style="background:var(--red)"></i>Miss</span></div>
@@ -797,6 +936,7 @@ document.addEventListener('click',e=>{
   const t=e.target.closest('button,tr[data-goto],th[data-sort]');if(!t)return;
   const ds=t.dataset;
   if(ds.v){show(ds.v);return;}
+  if(ds.mode){S.settings.mode=ds.mode;save();renderMode();if(view==='track')renderTrack();if(ds.mode==='board'&&S.settings.sound)say('Smart board mode. Let\'s go Knights!');toast(ds.mode==='board'?'Smart board mode: callouts and leaderboard on':'MacBook mode: callouts and sound off');return;}
   if(ds.pick){pickPlayer(ds.pick);return;}
   if(ds.sr){statRange=ds.sr;renderStats();return;}
   if(ds.sort){statSort=ds.sort;renderStats();return;}
@@ -814,6 +954,7 @@ document.addEventListener('click',e=>{
     case 'makeBtn':chooseResult(true);break;
     case 'missBtn':chooseResult(false);break;
     case 'fsBtn':toggleFS();break;
+    case 'soundBtn':S.settings.sound=!S.settings.sound;save();renderSound();if(S.settings.sound)say('Sound on. Let\'s go Knights!');break;
     case 'undoBtn':undo();break;
     case 'typeBtn':flipType();break;
     case 'ftBtn':toggleFT();break;
