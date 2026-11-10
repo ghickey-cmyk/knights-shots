@@ -225,6 +225,33 @@ nav{margin-left:8px}
 .trend .lf-pt{fill:#d9d0ec}
 .cards{grid-template-columns:repeat(5,1fr)}
 @media (max-width:900px){.cards{grid-template-columns:1fr 1fr}}
+
+/* ---------- v3: Reagan flow, full screen, bigger court ---------- */
+.track{grid-template-columns:minmax(0,1fr) 272px;gap:12px}
+#court{max-height:calc(100vh - 240px)}
+#toast{bottom:auto;top:calc(76px + env(safe-area-inset-top));transform:translateX(-50%) translateY(-12px)}
+#toast.on{transform:translateX(-50%) translateY(0)}
+:fullscreen{background:var(--bg);overflow:auto}
+.courtwrap{padding:6px}
+.actions{grid-template-columns:minmax(0,1fr) 150px 150px 112px;gap:8px;margin-top:8px}
+.actions .status{grid-column:auto;min-height:0;padding:8px 12px;flex-wrap:wrap}
+.status .what{font-size:16px;color:var(--text)}
+.status .what .step{color:var(--gold);font-weight:600}
+.status .last{width:100%;font-size:13px;color:var(--muted)}
+.big{font-size:30px;padding:8px 0}
+.big.picked{outline:4px solid var(--gold);outline-offset:3px}
+.undo{font-size:16px}
+.shortcuts{font-size:13px}
+.rosterpanel{transition:border-color .15s,box-shadow .15s}
+.rosterpanel.ask{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
+.rosterpanel.ask h3{color:var(--gold)}
+.pbtn{min-height:58px;padding:8px 10px}
+.pbtn:hover{border-color:var(--purple2)}
+.daybar .hi{font-family:var(--head);font-weight:700;font-size:20px}
+.fsbtn{border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:8px 12px;font-weight:600;font-size:14px;margin-left:8px;white-space:nowrap}
+.sidetbl td:first-child{font-weight:600}
+.half text{fill:var(--muted);font-family:var(--head);font-weight:700;font-size:2.2px}
+@media (max-width:980px){.actions{grid-template-columns:1fr 1fr 1fr}.actions .status{grid-column:1/-1}#court{max-height:none}}
 </style>
 </head>
 <body>
@@ -232,9 +259,10 @@ nav{margin-left:8px}
   <img src="icon-192.png" alt="Westbrook Knights crest">
   <div>
     <h1>Knights Shot Tracker</h1>
-    <div class="sub">Westbrook Knights practice shooting</div>
+    <div class="sub" id="subLbl">Westbrook Knights practice shooting</div>
   </div>
   <button class="sync off" id="sync" title="Click to save now">Drive not connected</button>
+  <button class="fsbtn" id="fsBtn">Full screen</button>
   <nav id="nav" aria-label="Sections">
     <button data-v="track" class="on">Track</button>
     <button data-v="stats">Stats</button>
@@ -248,32 +276,32 @@ nav{margin-left:8px}
   <section id="v-track" class="view on">
     <div class="track">
       <div>
-        <div class="daybar"><b id="todayLbl"></b><span id="todayCount" class="muted"></span></div>
+        <div class="daybar"><span><span class="hi" id="hiLbl"></span> <span class="muted" id="todayLbl"></span></span><span id="todayCount" class="muted"></span></div>
         <div class="courtwrap" id="courtwrap">
           <svg id="court" viewBox="-0.6 -0.6 95.2 51.2" aria-label="Full court. Click where the shot was taken.">
             <rect class="floor" x="-0.6" y="-0.6" width="95.2" height="51.2" rx="1"/>
             <g class="cl" id="courtLines"></g>
             <g id="dots"></g>
           </svg>
-          <div class="ftbanner">Free throws: pick the shooter, then make or miss</div>
+          <div class="ftbanner">Free throws: make or miss, then the shooter</div>
         </div>
         <div class="actions">
           <div class="status">
-            <div class="who" id="shooterLbl"></div>
             <div class="what" id="pend"></div>
             <div class="statusbtns">
               <button class="chip" id="typeBtn" disabled>2 / 3</button>
               <button class="chip" id="ftBtn">Free throws</button>
             </div>
+            <div class="last" id="lastLbl"></div>
           </div>
           <button class="big make" id="makeBtn">MAKE<span class="key">M key</span></button>
           <button class="big miss" id="missBtn">MISS<span class="key">N key</span></button>
           <button class="undo" id="undoBtn">Undo last<span class="key">Z key</span></button>
-          <div class="shortcuts">Shortcuts:<kbd>M</kbd>make<kbd>N</kbd>miss<kbd>F</kbd>free throws on/off<kbd>T</kbd>switch 2/3<kbd>Z</kbd>undo</div>
+          <div class="shortcuts">Spot, then make or miss, then the shooter.<kbd>M</kbd>make<kbd>N</kbd>miss<kbd>F</kbd>free throws on/off<kbd>T</kbd>switch 2/3<kbd>Z</kbd>undo</div>
         </div>
       </div>
       <aside class="rosterpanel">
-        <h3>Shooter</h3>
+        <h3 id="rosterTitle">Shooters</h3>
         <div class="roster" id="roster"></div>
       </aside>
     </div>
@@ -290,7 +318,7 @@ nav{margin-left:8px}
 (function(){
 'use strict';
 /* Paste the Google Apps Script web app URL between the quotes below. */
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwM4FDu3pCFbxILVwDoa6SqpF0j-Qc7QzFAPPCdEqNtGOO9UC1VNPp9WPWUVrWvRiB_CA/exec';
+const SHEET_URL = '';
 
 const LS='knightsShotTracker_v2';
 const DEFAULT_ROSTER=['Greg','Ryan','Griffin','Anthony','Tavin','Dylan','Drew','Josh','Jason'];
@@ -312,13 +340,13 @@ const shortDay=k=>{const p=k.split('-');return (+p[1])+'/'+(+p[2]);};
 const timeOf=t=>new Date(t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
 
 /* ---------- storage ---------- */
-function fresh(){return {players:DEFAULT_ROSTER.map((n,i)=>({id:'p'+(i+1),name:n,active:true})),shots:[],pendingDeletes:[],playersDirty:true,rosterFresh:true,settings:{green:33,min:10,window:14,sheetUrl:''}};}
+function fresh(){return {players:DEFAULT_ROSTER.map((n,i)=>({id:'p'+(i+1),name:n,active:true})),shots:[],pendingDeletes:[],playersDirty:true,rosterFresh:true,settings:{green:33,min:10,window:14,sheetUrl:'',manager:'Reagan'}};}
 function load(){
   try{
     const r=JSON.parse(localStorage.getItem(LS));
     if(r&&Array.isArray(r.players)){
       r.shots=Array.isArray(r.shots)?r.shots:[];r.pendingDeletes=Array.isArray(r.pendingDeletes)?r.pendingDeletes:[];
-      r.settings=Object.assign({green:33,min:10,window:14,sheetUrl:''},r.settings||{});return r;
+      r.settings=Object.assign({green:33,min:10,window:14,sheetUrl:'',manager:'Reagan'},r.settings||{});return r;
     }
   }catch(e){}
   return fresh();
@@ -373,6 +401,7 @@ function agg(sh){
 }
 function pctNum(m,a){return a?m/a*100:null;}
 function cell(m,a){return a?`<b>${Math.round(m/a*100)}%</b><small>${m}/${a}</small>`:'<span class="dash">—</span>';}
+function sideOf(s){if(s.type==='FT'||s.lat==null)return null;if(Math.abs(s.lat)<=3)return 'Middle';return s.lat<0?'Right':'Left';}
 function rangeShots(range){
   if(range==='today'){const k=todayKey();return S.shots.filter(s=>s.day===k);}
   if(range==='window'){const k=daysAgoKey(S.settings.window-1);return S.shots.filter(s=>s.day>=k);}
@@ -402,36 +431,46 @@ function show(v){
   document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));
   render();window.scrollTo(0,0);
 }
-function render(){({track:renderTrack,stats:renderStats,clubs:renderClubs,player:renderPlayer,setup:renderSetup})[view]();updateSync();}
+function renderMgr(){const m=mgr();$('#subLbl').textContent=m?`Tracked by ${m}, team manager`:'Westbrook Knights practice shooting';}
+function render(){renderMgr();({track:renderTrack,stats:renderStats,clubs:renderClubs,player:renderPlayer,setup:renderSetup})[view]();updateSync();}
 
 /* ---------- TRACK ---------- */
-let sel=null,pending=null,ftMode=false;
+let pending=null,pendingMade=null,ftMode=false,lastLogged=null;
+const MILESTONES=[100,250,500,750,1000,1500,2000,2500,3000,4000,5000,6000,7500,10000];
+function mgr(){return (S.settings.manager||'').trim();}
+function greeting(){const h=new Date().getHours();return h<12?'Good morning':h<17?'Good afternoon':'Good evening';}
 function renderTrack(){
   const tk=todayKey();const today=S.shots.filter(s=>s.day===tk);
+  const m=mgr();
+  $('#hiLbl').textContent=m?`${greeting()}, ${m}.`:'';
   $('#todayLbl').textContent=prettyDay(tk);
-  $('#todayCount').textContent=today.length+(today.length===1?' shot':' shots')+' logged today';
+  $('#todayCount').textContent=`${today.length} today, ${S.shots.length.toLocaleString()} this season`;
   const act=S.players.filter(p=>p.active);
-  if(sel&&!act.find(p=>p.id===sel))sel=null;
   $('#roster').innerHTML=act.map(p=>{
     const a=agg(today.filter(s=>s.p===p.id));
-    return `<button class="pbtn${p.id===sel?' on':''}" data-pick="${p.id}"><span class="pn">${esc(p.name)}</span><span class="ps">3s ${a.m3}/${a.a3} &nbsp; 2s ${a.m2}/${a.a2}</span><span class="ps">FT ${a.mf}/${a.af}</span></button>`;
+    return `<button class="pbtn" data-pick="${p.id}"><span class="pn">${esc(p.name)}</span><span class="ps">3s ${a.m3}/${a.a3} &nbsp; 2s ${a.m2}/${a.a2}</span><span class="ps">FT ${a.mf}/${a.af}</span></button>`;
   }).join('')||'<div class="empty">No active players. Add or activate players in Setup.</div>';
-  const mine=sel?today.filter(s=>s.p===sel&&s.type!=='FT').slice(-15):[];
-  $('#dots').innerHTML=mine.map((s,i)=>dotSVG(s.X,s.Y,s.made,.3+.7*(i+1)/mine.length)).join('')+
+  const recent=today.filter(s=>s.type!=='FT').slice(-12);
+  $('#dots').innerHTML=recent.map((s,i)=>dotSVG(s.X,s.Y,s.made,.25+.75*(i+1)/recent.length)).join('')+
     (pending&&!ftMode?`<circle class="pendmark" cx="${pending.X}" cy="${pending.Y}" r="1.1"/>`:'');
   renderPending();
 }
 function renderPending(){
-  $('#shooterLbl').innerHTML=sel?esc(pname(sel)):'<span class="warn">Pick a shooter</span>';
   $('#courtwrap').classList.toggle('ftmode',ftMode);
   $('#ftBtn').classList.toggle('on',ftMode);
   $('#ftBtn').textContent=ftMode?'Free throws on':'Free throws';
   const tb=$('#typeBtn');
-  if(ftMode){$('#pend').innerHTML='<b>Free throw</b>';tb.disabled=true;tb.textContent='2 / 3';}
-  else if(pending){$('#pend').innerHTML=`<b>${typeLabel(pending.type)}</b> &nbsp;${zoneOf(pending)}`;tb.disabled=false;tb.textContent='Make it a '+(pending.type==='3'?'2':'3');}
-  else{$('#pend').textContent='Click the court where the shot was taken';tb.disabled=true;tb.textContent='2 / 3';}
-  const ready=!!(sel&&(ftMode||pending));
-  $('#makeBtn').classList.toggle('dim',!ready);$('#missBtn').classList.toggle('dim',!ready);
+  const base=ftMode?'Free throw':pending?`${typeLabel(pending.type)} ${zoneOf(pending)}`:null;
+  if(!base){$('#pend').innerHTML='<span class="step">Click where the shot was taken</span>';}
+  else if(pendingMade==null){$('#pend').innerHTML=`<b>${base}</b> &nbsp;<span class="step">Make or miss?</span>`;}
+  else{$('#pend').innerHTML=`<b>${base}, ${pendingMade?'make':'miss'}</b> &nbsp;<span class="step">Who shot it?</span>`;}
+  if(!ftMode&&pending){tb.disabled=false;tb.textContent='Make it a '+(pending.type==='3'?'2':'3');}else{tb.disabled=true;tb.textContent='2 / 3';}
+  $('#makeBtn').classList.toggle('dim',!base);$('#missBtn').classList.toggle('dim',!base);
+  $('#makeBtn').classList.toggle('picked',pendingMade===true);$('#missBtn').classList.toggle('picked',pendingMade===false);
+  const ask=pendingMade!=null;
+  $('.rosterpanel').classList.toggle('ask',ask);
+  $('#rosterTitle').textContent=ask?'Who shot it?':'Shooters';
+  $('#lastLbl').textContent=lastLogged?`Last logged: ${pname(lastLogged.p)}, ${typeLabel(lastLogged.type)} ${lastLogged.made?'make':'miss'}`:'';
 }
 function courtTap(e){
   keepAwake();
@@ -440,31 +479,41 @@ function courtTap(e){
   const p=pt.matrixTransform(svg.getScreenCTM().inverse());
   const X=clamp(p.x,0,94),Y=clamp(p.y,0,50);
   let d,lat;
-  if(X<=47){d=X;lat=Y-25;}else{d=94-X;lat=25-Y;} // fold far end onto near end
+  if(X<=47){d=X;lat=Y-25;}else{d=94-X;lat=25-Y;} // fold far end onto near end; lat < 0 is the shooter's right
   pending={X:r1(X),Y:r1(Y),d:r1(d),lat:r1(lat),type:isThree(d,lat)?'3':'2'};
+  pendingMade=null;
   renderTrack();
 }
-function toggleFT(){ftMode=!ftMode;pending=null;renderTrack();}
+function toggleFT(){ftMode=!ftMode;pending=null;pendingMade=null;renderTrack();}
 function flipType(){if(pending&&!ftMode){pending.type=pending.type==='3'?'2':'3';renderPending();}}
-function record(made){
-  if(!sel){toast('Pick the shooter first');return;}
-  if(!ftMode&&!pending){toast('Click the court where the shot was taken');return;}
+function chooseResult(made){
+  if(!ftMode&&!pending){toast('Click where the shot was taken first');return;}
+  pendingMade=!!made;keepAwake();renderPending();
+}
+function pickPlayer(pid){
+  if(!ftMode&&!pending){toast('Click where the shot was taken first');return;}
+  if(pendingMade==null){toast('Choose make or miss first');return;}
   const now=new Date();
   const base=ftMode?{type:'FT',X:null,Y:null,d:null,lat:null}:{type:pending.type,X:pending.X,Y:pending.Y,d:pending.d,lat:pending.lat};
-  S.shots.push(Object.assign({id:uid(),p:sel,made:!!made,t:now.getTime(),day:dayKey(now),synced:false},base));
-  save();pending=null;
+  const shot=Object.assign({id:uid(),p:pid,made:pendingMade,t:now.getTime(),day:dayKey(now),synced:false},base);
+  S.shots.push(shot);save();
+  lastLogged=shot;
+  const made=pendingMade;pending=null;pendingMade=null;
   const w=$('#courtwrap');w.classList.remove('flash-make','flash-miss');void w.offsetWidth;w.classList.add(made?'flash-make':'flash-miss');
   setTimeout(()=>w.classList.remove('flash-make','flash-miss'),350);
   renderTrack();scheduleSync();
+  const n=S.shots.length;
+  if(MILESTONES.includes(n)){const m=mgr();toast(`${m?m+', that':'That'}'s ${n.toLocaleString()} shots logged this season!`);}
 }
 function removeShots(pred){
   const gone=S.shots.filter(pred);
   S.shots=S.shots.filter(s=>!pred(s));
   gone.forEach(s=>{if(s.synced)S.pendingDeletes.push(s.id);});
+  if(lastLogged&&gone.some(s=>s.id===lastLogged.id))lastLogged=null;
   save();scheduleSync();return gone;
 }
 function undo(){
-  if(pending){pending=null;renderTrack();toast('Click cleared');return;}
+  if(pending||pendingMade!=null){pending=null;pendingMade=null;renderTrack();toast('Cleared');return;}
   const tk=todayKey();let last=null;
   S.shots.forEach(s=>{if(s.day===tk&&(!last||s.t>last.t))last=s;});
   if(!last){toast('No shots to undo today');return;}
@@ -517,7 +566,7 @@ function renderClubs(){
   const st=S.settings;const {g,r,n}=clubLists();
   const card=x=>`<div class="ccard"><span class="cn">${esc(x.p.name)}</span><span class="cp">${Math.round(x.c.p)}%</span><span class="cm">${x.c.m} of ${x.c.a} threes</span><span class="cd ${x.delta==null?'':x.delta>=0?'up':'down'}">${x.delta==null?'':(x.delta>=0?'▲ ':'▼ ')+Math.abs(Math.round(x.delta))+' pts'}</span></div>`;
   $('#v-clubs').innerHTML=`
-    <div class="printhead"><img src="icon-192.png" alt=""><div><h2 style="margin:0">Westbrook Knights 3PT Clubs</h2><div>${prettyDay(todayKey())}</div></div></div>
+    <div class="printhead"><img src="icon-192.png" alt=""><div><h2 style="margin:0">Westbrook Knights 3PT Clubs</h2><div>${prettyDay(todayKey())}${mgr()?`. Tracked by ${esc(mgr())}, team manager`:''}</div></div></div>
     <div class="clubtop"><h2 class="noprint">3PT clubs</h2><div class="btnrow noprint"><button class="btn ghost" id="copyClubs">Copy club update</button><button class="btn ghost" id="printClubs">Print standings</button></div></div>
     <div class="rules">Based on practice threes from the last ${st.window} days. ${st.green}% or better on ${st.min}+ attempts makes the Green Club. Arrows compare to the ${st.window} days before that.</div>
     <div class="clubs">
@@ -534,6 +583,7 @@ function clubText(){
     'GREEN CLUB',...(g.length?g.map(line):['No one yet']),'',
     'RED CLUB',...(r.length?r.map(line):['No one']),];
   if(n.length)out.push('','STILL BUILDING ATTEMPTS',n.map(x=>`${x.p.name} (${x.c.a}/${st.min})`).join(', '));
+  if(mgr())out.push('',`Tracked by ${mgr()}, Knights team manager`);
   out.push('',TAGLINE);
   return out.join('\n');
 }
@@ -552,7 +602,8 @@ function halfCourtSVG(shots){
     <g class="cl"><rect x="0" y="0" width="50" height="47"/><rect class="lane" x="19" y="0" width="12" height="19"/>
     <circle cx="25" cy="19" r="6"/><line x1="22" y1="4" x2="28" y2="4"/><circle class="rim" cx="25" cy="5.25" r=".75"/>
     <path d="M5.25 0 L5.25 5.25 A19.75 19.75 0 0 0 44.75 5.25 L44.75 0"/><path d="M19 47 A6 6 0 0 1 31 47"/></g>
-    ${shots.filter(s=>s.type!=='FT').map(s=>dotSVG(r1(s.lat+25),s.d,s.made,.9,.6)).join('')}</svg>`;
+    <text x="1.2" y="45.6">LEFT</text><text x="48.8" y="45.6" text-anchor="end">RIGHT</text>
+    ${shots.filter(s=>s.type!=='FT').map(s=>dotSVG(r1(25-s.lat),s.d,s.made,.9,.6)).join('')}</svg>`;
 }
 function trendSVG(pid){
   const days=[...new Set(S.shots.filter(s=>s.p===pid).map(s=>s.day))].sort().slice(-15);
@@ -593,7 +644,12 @@ function renderPlayer(){
     </div>
     <div class="pgrid">
       <div class="box"><h3>Shot chart</h3>${halfCourtSVG(sh)}
-        <div class="legend"><span><i style="background:var(--green)"></i>Make</span><span><i style="background:var(--red)"></i>Miss</span></div></div>
+        <div class="legend"><span><i style="background:var(--green)"></i>Make</span><span><i style="background:var(--red)"></i>Miss</span></div>
+        <h3 style="margin-top:16px">Left vs right</h3>
+        <table class="sidetbl"><thead><tr><th>Side</th><th>2PT</th><th>3PT</th><th>FG</th></tr></thead><tbody>
+        ${['Left','Middle','Right'].map(k=>{const b=agg(sh.filter(s=>sideOf(s)===k));return `<tr><td>${k}</td><td>${cell(b.m2,b.a2)}</td><td>${cell(b.m3,b.a3)}</td><td>${cell(b.m,b.a)}</td></tr>`;}).join('')}
+        </tbody></table>
+        <p class="note">Sides are from the shooter's view facing the basket. Middle is the strip 3 feet either side of the center of the lane.</p></div>
       <div class="box"><h3>By zone</h3>
         <table><thead><tr><th>Zone</th><th>Made</th><th>%</th></tr></thead><tbody>
         ${ZONES.map(k=>`<tr><td>${k}</td><td>${z[k].m}/${z[k].a}</td><td><b>${pc(z[k].m,z[k].a)}</b></td></tr>`).join('')}
@@ -631,6 +687,10 @@ function renderSetup(){
           <div class="btnrow"><button class="btn ghost" id="syncNow" ${url?'':'disabled'}>Save to Drive now</button><button class="btn ghost" id="pull" ${url?'':'disabled'}>Reload from Drive</button><button class="btn ghost" id="csv">Export spreadsheet (CSV)</button></div>
         </div>
         <div class="box" style="margin-top:14px">
+          <h3>Manager</h3>
+          <div class="field">Manager's name<input type="text" id="mgrIn" style="width:160px;text-align:left" value="${esc(st.manager||'')}"></div>
+        </div>
+        <div class="box" style="margin-top:14px">
           <h3>Club rules</h3>
           <div class="field">Green Club 3PT %<input type="number" min="1" max="100" data-set="green" value="${st.green}"></div>
           <div class="field">Minimum 3PT attempts<input type="number" min="1" max="500" data-set="min" value="${st.min}"></div>
@@ -653,8 +713,8 @@ function download(name,text,type){
   setTimeout(()=>URL.revokeObjectURL(u),3000);
 }
 function exportCSV(){
-  const rows=[['Date','Time','Player','Type','Zone','Result','Feet from baseline','Feet from middle']];
-  S.shots.slice().sort((a,b)=>a.t-b.t).forEach(s=>rows.push([s.day,timeOf(s.t),pname(s.p),typeLabel(s.type),zoneOf(s),s.made?'Make':'Miss',s.d==null?'':s.d,s.lat==null?'':s.lat]));
+  const rows=[['Date','Time','Player','Type','Zone','Side','Result','Feet from baseline','Feet from middle']];
+  S.shots.slice().sort((a,b)=>a.t-b.t).forEach(s=>rows.push([s.day,timeOf(s.t),pname(s.p),typeLabel(s.type),zoneOf(s),sideOf(s)||'',s.made?'Make':'Miss',s.d==null?'':s.d,s.lat==null?'':s.lat]));
   download(`knights-shots-${todayKey()}.csv`,rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n'),'text/csv');
   toast('Spreadsheet exported');
 }
@@ -734,7 +794,7 @@ document.addEventListener('click',e=>{
   const t=e.target.closest('button,tr[data-goto],th[data-sort]');if(!t)return;
   const ds=t.dataset;
   if(ds.v){show(ds.v);return;}
-  if(ds.pick){sel=ds.pick;keepAwake();renderTrack();return;}
+  if(ds.pick){pickPlayer(ds.pick);return;}
   if(ds.sr){statRange=ds.sr;renderStats();return;}
   if(ds.sort){statSort=ds.sort;renderStats();return;}
   if(ds.goto){plId=ds.goto;show('player');return;}
@@ -743,13 +803,14 @@ document.addEventListener('click',e=>{
     const p=S.players.find(x=>x.id===ds.delp);const n=S.shots.filter(s=>s.p===ds.delp).length;
     if(!confirm(n?`Delete ${p.name} and their ${n} logged shots? To keep their stats, uncheck Active instead.`:`Delete ${p.name}?`))return;
     S.players=S.players.filter(x=>x.id!==ds.delp);removeShots(s=>s.p===ds.delp);
-    if(sel===ds.delp)sel=null;rosterChanged();renderSetup();toast(p.name+' deleted');return;
+    rosterChanged();renderSetup();toast(p.name+' deleted');return;
   }
   if(ds.dels){removeShots(s=>s.id===ds.dels);renderSetup();toast('Shot deleted');return;}
   switch(t.id){
     case 'sync':if(!sheetUrl())show('setup');else{syncNow();}break;
-    case 'makeBtn':record(true);break;
-    case 'missBtn':record(false);break;
+    case 'makeBtn':chooseResult(true);break;
+    case 'missBtn':chooseResult(false);break;
+    case 'fsBtn':toggleFS();break;
     case 'undoBtn':undo();break;
     case 'typeBtn':flipType();break;
     case 'ftBtn':toggleFT();break;
@@ -767,6 +828,7 @@ document.addEventListener('change',e=>{
   const t=e.target,ds=t.dataset;
   if(t.id==='inact'){showInactive=t.checked;renderStats();return;}
   if(t.id==='plSel'){plId=t.value;renderPlayer();return;}
+  if(t.id==='mgrIn'){S.settings.manager=t.value.trim();save();renderMgr();toast('Saved');return;}
   if(t.id==='logSel'){logDay=t.value;renderSetup();return;}
   if(ds.rename){const p=S.players.find(x=>x.id===ds.rename);const n=t.value.trim();if(p&&n){p.name=n;rosterChanged();toast('Saved');}else t.value=p?p.name:'';return;}
   if(ds.active){const p=S.players.find(x=>x.id===ds.active);if(p){p.active=t.checked;rosterChanged();}return;}
@@ -776,13 +838,25 @@ document.addEventListener('keydown',e=>{
   if(e.target.id==='newName'&&e.key==='Enter'){$('#addP').click();return;}
   if(e.target.matches('input,select,textarea')||e.metaKey||e.ctrlKey||e.altKey||view!=='track')return;
   const k=e.key.toLowerCase();
-  if(k==='m')record(true);else if(k==='n')record(false);else if(k==='f')toggleFT();else if(k==='t')flipType();else if(k==='z')undo();else return;
+  if(k==='m')chooseResult(true);else if(k==='n')chooseResult(false);else if(k==='f')toggleFT();else if(k==='t')flipType();else if(k==='z')undo();else return;
   e.preventDefault();
 });
 $('#court').addEventListener('pointerdown',e=>{e.preventDefault();courtTap(e);});
 window.addEventListener('online',()=>{updateSync();syncNow();});
 window.addEventListener('offline',updateSync);
 setInterval(()=>{if(waitingCount()||S.playersDirty)syncNow();},30000);
+
+/* ---------- full screen ---------- */
+function fsEl(){return document.fullscreenElement||document.webkitFullscreenElement;}
+function toggleFS(){
+  const d=document.documentElement;
+  try{
+    if(fsEl())(document.exitFullscreen||document.webkitExitFullscreen).call(document);
+    else{const r=(d.requestFullscreen||d.webkitRequestFullscreen).call(d);if(r&&r.catch)r.catch(()=>toast('Full screen is blocked in this browser'));}
+  }catch(e){toast('Full screen is blocked in this browser');}
+}
+function updFS(){$('#fsBtn').textContent=fsEl()?'Exit full screen':'Full screen';}
+document.addEventListener('fullscreenchange',updFS);document.addEventListener('webkitfullscreenchange',updFS);
 
 /* ---------- keep screen on during practice ---------- */
 let wl=null;
