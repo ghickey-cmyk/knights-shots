@@ -302,6 +302,7 @@ nav{margin-left:8px}
 body:not(.board) #soundBtn,body:not(.board) #leaders{display:none}
 body.board .lb .lr{font-size:18px}
 body.board .lb .lr b{font-size:22px}
+input[type=range]{accent-color:var(--purple2)}
 </style>
 </head>
 <body>
@@ -374,7 +375,7 @@ body.board .lb .lr b{font-size:22px}
 (function(){
 'use strict';
 /* Paste the Google Apps Script web app URL between the quotes below. */
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwM4FDu3pCFbxILVwDoa6SqpF0j-Qc7QzFAPPCdEqNtGOO9UC1VNPp9WPWUVrWvRiB_CA/exec';
+const SHEET_URL = '';
 
 const LS='knightsShotTracker_v2';
 const DEFAULT_ROSTER=['Greg','Ryan','Griffin','Anthony','Tavin','Dylan','Drew','Josh','Jason'];
@@ -396,13 +397,13 @@ const shortDay=k=>{const p=k.split('-');return (+p[1])+'/'+(+p[2]);};
 const timeOf=t=>new Date(t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
 
 /* ---------- storage ---------- */
-function fresh(){return {players:DEFAULT_ROSTER.map((n,i)=>({id:'p'+(i+1),name:n,active:true})),shots:[],pendingDeletes:[],playersDirty:true,rosterFresh:true,settings:{green:33,min:10,window:14,sheetUrl:'',manager:'Reagan',sound:true,mode:'laptop'}};}
+function fresh(){return {players:DEFAULT_ROSTER.map((n,i)=>({id:'p'+(i+1),name:n,active:true})),shots:[],pendingDeletes:[],playersDirty:true,rosterFresh:true,settings:{green:33,min:10,window:14,sheetUrl:'',manager:'Reagan',sound:true,mode:'laptop',voiceName:'',rate:1.08,pitch:.9}};}
 function load(){
   try{
     const r=JSON.parse(localStorage.getItem(LS));
     if(r&&Array.isArray(r.players)){
       r.shots=Array.isArray(r.shots)?r.shots:[];r.pendingDeletes=Array.isArray(r.pendingDeletes)?r.pendingDeletes:[];
-      r.settings=Object.assign({green:33,min:10,window:14,sheetUrl:'',manager:'Reagan',sound:true,mode:'laptop'},r.settings||{});return r;
+      r.settings=Object.assign({green:33,min:10,window:14,sheetUrl:'',manager:'Reagan',sound:true,mode:'laptop',voiceName:'',rate:1.08,pitch:.9},r.settings||{});return r;
     }
   }catch(e){}
   return fresh();
@@ -608,16 +609,26 @@ function nextHype(){
   setTimeout(nextHype,dur*1000);
 }
 let voice=null;
+function allVoices(){
+  if(!('speechSynthesis' in window))return [];
+  const q=v=>/premium/i.test(v.name)?0:/enhanced/i.test(v.name)?1:/google/i.test(v.name)?3:2;
+  return speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang)).sort((a,b)=>q(a)-q(b)||a.name.localeCompare(b.name));
+}
 function pickVoice(){
-  if(!('speechSynthesis' in window))return;
-  const vs=speechSynthesis.getVoices();
-  const pref=['Daniel','Alex','Aaron','Fred','Google US English','Samantha'];
-  voice=pref.map(n=>vs.find(v=>v.name.indexOf(n)===0&&/^en/i.test(v.lang))).find(Boolean)||vs.find(v=>/^en-US/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang))||null;
+  const vs=allVoices();if(!vs.length){voice=null;return;}
+  voice=(S.settings.voiceName&&vs.find(v=>v.name===S.settings.voiceName))||
+    ['Evan','Nathan','Tom','Daniel','Alex','Aaron','Fred','Google US English','Samantha'].map(n=>vs.find(v=>v.name.indexOf(n)===0)).find(Boolean)||vs[0];
+  if(view==='setup'&&$('#voiceSel'))fillVoices();
 }
 if('speechSynthesis' in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice;}
-function say(t){
-  if(!S.settings.sound||!('speechSynthesis' in window))return;
-  try{const u=new SpeechSynthesisUtterance(t);if(voice)u.voice=voice;u.rate=1.08;u.pitch=.9;u.volume=1;speechSynthesis.speak(u);}catch(e){}
+function say(t,force){
+  if((!S.settings.sound&&!force)||!('speechSynthesis' in window))return;
+  try{speechSynthesis.cancel&&force&&speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);if(voice)u.voice=voice;u.rate=+S.settings.rate||1;u.pitch=+S.settings.pitch||1;u.volume=1;speechSynthesis.speak(u);}catch(e){}
+}
+function voiceLabel(v){return v.name.replace(/\s*\(.*?\)\s*/g,' ').trim()+(/premium/i.test(v.name)?' (Premium)':/enhanced/i.test(v.name)?' (Enhanced)':'')+(/^en-US/i.test(v.lang)?'':' · '+v.lang.replace('en-',''));}
+function fillVoices(){
+  const sel=$('#voiceSel');if(!sel)return;const vs=allVoices();
+  sel.innerHTML=vs.length?vs.map(v=>`<option value="${esc(v.name)}" ${voice&&v.name===voice.name?'selected':''}>${esc(voiceLabel(v))}</option>`).join(''):'<option>No voices found</option>';
 }
 function renderMode(){const b=S.settings.mode==='board';document.body.classList.toggle('board',b);document.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('on',x.dataset.mode===S.settings.mode));}
 function renderSound(){$('#soundBtn').textContent=S.settings.sound?'Sound on':'Sound off';}
@@ -833,6 +844,14 @@ function renderSetup(){
           <div class="field">Manager's name<input type="text" id="mgrIn" style="width:160px;text-align:left" value="${esc(st.manager||'')}"></div>
         </div>
         <div class="box" style="margin-top:14px">
+          <h3>Announcer voice</h3>
+          <p class="note">Used in Smart board mode. Premium and Enhanced voices sound best and are listed first. To add more: Mac System Settings › Accessibility › Spoken Content › System voice › Manage Voices. Download an English voice, then quit and reopen Chrome.</p>
+          <div class="field">Voice<select id="voiceSel" style="max-width:240px"></select></div>
+          <div class="field">Speed<input type="range" id="rateIn" min="0.7" max="1.5" step="0.05" value="${st.rate}" style="width:160px"></div>
+          <div class="field">Pitch<input type="range" id="pitchIn" min="0.5" max="1.5" step="0.05" value="${st.pitch}" style="width:160px"></div>
+          <div class="btnrow"><button class="btn" id="voiceTest">Test voice</button><button class="btn ghost" id="voiceReset">Reset speed and pitch</button></div>
+        </div>
+        <div class="box" style="margin-top:14px">
           <h3>Club rules</h3>
           <div class="field">Green Club 3PT %<input type="number" min="1" max="100" data-set="green" value="${st.green}"></div>
           <div class="field">Minimum 3PT attempts<input type="number" min="1" max="500" data-set="min" value="${st.min}"></div>
@@ -848,6 +867,7 @@ function renderSetup(){
       </div>
     </div>
     <div class="tagline">${TAGLINE}</div>`;
+  fillVoices();
 }
 function download(name,text,type){
   const b=new Blob([text],{type});const u=URL.createObjectURL(b);
@@ -962,6 +982,8 @@ document.addEventListener('click',e=>{
     case 'copyClubs':copyText(clubText());break;
     case 'addP':{const i=$('#newName');const n=i.value.trim();if(!n)return;S.players.push({id:'p'+uid(),name:n,active:true});rosterChanged();renderSetup();toast(n+' added');break;}
     case 'csv':exportCSV();break;
+    case 'voiceTest':{const n=(S.players.find(p=>p.active)||{name:'Greg'}).name;say(`${n} is on fire! Somebody stop ${n}!`,true);break;}
+    case 'voiceReset':S.settings.rate=1.08;S.settings.pitch=.9;save();renderSetup();toast('Speed and pitch reset');break;
     case 'syncNow':syncNow().then(()=>{toast(syncErr?'Could not reach the Google Sheet':'Saved to Drive');renderSetup();});break;
     case 'pull':pullFromSheet(true);break;
     case 'urlSave':{const v=$('#urlIn').value.trim();if(v&&!/^https:\/\/script\.google(usercontent)?\.com\//.test(v)){toast('That is not a Google Apps Script web app URL');return;}S.settings.sheetUrl=v;S.playersDirty=true;save();renderSetup();if(v){pullFromSheet(true).then(()=>syncNow());}break;}
@@ -972,6 +994,8 @@ document.addEventListener('change',e=>{
   const t=e.target,ds=t.dataset;
   if(t.id==='inact'){showInactive=t.checked;renderStats();return;}
   if(t.id==='plSel'){plId=t.value;renderPlayer();return;}
+  if(t.id==='voiceSel'){S.settings.voiceName=t.value;save();pickVoice();say('Lets go Knights!',true);return;}
+  if(t.id==='rateIn'||t.id==='pitchIn'){S.settings[t.id==='rateIn'?'rate':'pitch']=parseFloat(t.value);save();say('Heating up!',true);return;}
   if(t.id==='mgrIn'){S.settings.manager=t.value.trim();save();renderMgr();toast('Saved');return;}
   if(t.id==='logSel'){logDay=t.value;renderSetup();return;}
   if(ds.rename){const p=S.players.find(x=>x.id===ds.rename);const n=t.value.trim();if(p&&n){p.name=n;rosterChanged();toast('Saved');}else t.value=p?p.name:'';return;}
