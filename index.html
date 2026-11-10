@@ -375,7 +375,7 @@ input[type=range]{accent-color:var(--purple2)}
 (function(){
 'use strict';
 /* Paste the Google Apps Script web app URL between the quotes below. */
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwM4FDu3pCFbxILVwDoa6SqpF0j-Qc7QzFAPPCdEqNtGOO9UC1VNPp9WPWUVrWvRiB_CA/exec';
+const SHEET_URL = '';
 
 const LS='knightsShotTracker_v2';
 const DEFAULT_ROSTER=['Greg','Ryan','Griffin','Anthony','Tavin','Dylan','Drew','Josh','Jason'];
@@ -739,8 +739,10 @@ function clubText(){
   out.push('',TAGLINE);
   return out.join('\n');
 }
-function copyText(t){
-  const done=()=>toast('Club update copied. Paste it into SportsYou.');
+function pcode(id){let h=2166136261;const s=id+'|knights';for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(36).slice(0,6);}
+function playerLink(id){return location.origin+location.pathname.replace(/[^/]*$/,'')+'me.html?p='+pcode(id);}
+function copyText(t,msg){
+  const done=()=>toast(msg||'Club update copied. Paste it into SportsYou.');
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,()=>fallbackCopy(t,done));}
   else fallbackCopy(t,done);
 }
@@ -838,6 +840,11 @@ function renderSetup(){
           ${url?(st.lastSync?'Last saved to Drive: '+prettyDay(dayKey(new Date(st.lastSync)))+' at '+timeOf(st.lastSync)+'.':'Connected. Nothing sent yet.'):'<b style="color:var(--gold)">Not connected yet.</b>'}</p>
           ${SHEET_URL?'':`<div class="urlrow"><input type="text" id="urlIn" placeholder="Paste the web app URL" value="${esc(st.sheetUrl)}"><button class="btn" id="urlSave">Connect</button></div>`}
           <div class="btnrow"><button class="btn ghost" id="syncNow" ${url?'':'disabled'}>Save to Drive now</button><button class="btn ghost" id="pull" ${url?'':'disabled'}>Reload from Drive</button><button class="btn ghost" id="csv">Export spreadsheet (CSV)</button></div>
+        </div>
+        <div class="box" style="margin-top:14px">
+          <h3>Player links</h3>
+          <p class="note">Each player’s personal stats page. Copy a link and send it to that player. They open it in Safari and tap Share › Add to Home Screen.</p>
+          ${S.players.filter(p=>p.active).map(p=>`<div class="field"><b>${esc(p.name)}</b><button class="btn ghost" data-plink="${p.id}">Copy link</button></div>`).join('')}
         </div>
         <div class="box" style="margin-top:14px">
           <h3>Manager</h3>
@@ -968,6 +975,7 @@ document.addEventListener('click',e=>{
     S.players=S.players.filter(x=>x.id!==ds.delp);removeShots(s=>s.p===ds.delp);
     rosterChanged();renderSetup();toast(p.name+' deleted');return;
   }
+  if(ds.plink){const p=S.players.find(x=>x.id===ds.plink);copyText(playerLink(ds.plink),`${p?p.name:'Player'}’s link copied`);return;}
   if(ds.dels){removeShots(s=>s.id===ds.dels);renderSetup();toast('Shot deleted');return;}
   switch(t.id){
     case 'sync':if(!sheetUrl())show('setup');else{syncNow();}break;

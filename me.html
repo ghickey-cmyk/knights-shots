@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="My Shooting">
+<meta name="theme-color" content="#1a0f2e">
+<title>My Shooting · Knights</title>
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#130b22; --panel:#1d1235; --panel2:#281849; --line:#3b2a60;
+  --purple:#5b2ea6; --purple2:#8a5cff; --text:#f4effd; --muted:#ab9dc8;
+  --green:#22c55e; --red:#ef4444; --gold:#f5c542;
+  --floor:#21143b; --lane:#2d1a52; --courtline:rgba(255,255,255,.82);
+  --head:'Barlow Condensed','Arial Narrow',system-ui,sans-serif;
+  --body:'Barlow',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--body)}
+body{padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+button{font-family:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+header{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;
+  padding:calc(10px + env(safe-area-inset-top)) 14px 10px;background:linear-gradient(90deg,#2b1552,#170d2b);border-bottom:2px solid var(--purple)}
+header img{width:38px;height:38px;border-radius:8px}
+header h1{font-family:var(--head);font-weight:800;font-size:23px;margin:0;line-height:1}
+header .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.refresh{margin-left:auto;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-weight:600;font-size:14px}
+.refresh.spin{opacity:.5}
+main{padding:12px 14px;max-width:560px;margin:0 auto}
+h2{font-family:var(--head);font-weight:800;font-size:26px;margin:4px 0}
+h3{font-family:var(--head);font-weight:700;font-size:20px;margin:0 0 8px}
+.note{font-size:13px;color:var(--muted);line-height:1.4;margin:4px 0 0}
+.empty{color:var(--muted);font-size:15px;padding:8px 2px}
+.err{background:rgba(245,197,66,.12);border:1px solid rgba(245,197,66,.5);color:var(--gold);border-radius:12px;padding:12px;font-size:14px;margin-bottom:12px}
+
+.hero{border-radius:16px;padding:16px;border:2px solid var(--line);margin-bottom:12px;background:var(--panel)}
+.hero.green{border-color:var(--green);background:linear-gradient(180deg,rgba(34,197,94,.18),rgba(34,197,94,.04))}
+.hero.red{border-color:var(--red);background:linear-gradient(180deg,rgba(239,68,68,.15),rgba(239,68,68,.03))}
+.hero .lbl{font-size:13px;color:var(--muted);font-weight:600}
+.hero .club{font-family:var(--head);font-weight:800;font-size:34px;line-height:1.05}
+.hero.green .club{color:#6ee7a0}.hero.red .club{color:#fca5a5}
+.hero .big{display:flex;align-items:baseline;gap:10px;margin:4px 0 8px}
+.hero .pct{font-family:var(--head);font-weight:800;font-size:56px;line-height:1}
+.hero .of{color:var(--muted);font-size:15px}
+.goal{background:rgba(0,0,0,.25);border-radius:12px;padding:11px 13px;font-size:16px;line-height:1.35}
+.goal b{font-family:var(--head);font-size:21px;color:var(--gold)}
+.bar{height:10px;border-radius:6px;background:rgba(255,255,255,.1);margin:10px 0 2px;position:relative;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:var(--gold)}
+.bar u{position:absolute;top:-3px;bottom:-3px;width:2px;background:#fff}
+.barlbl{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+
+.box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.card{background:var(--panel2);border-radius:10px;padding:8px 10px}
+.card .k{font-size:13px;color:var(--muted)}
+.card .v{font-family:var(--head);font-weight:800;font-size:28px;line-height:1.1}
+.card .s{font-size:12px;color:var(--muted)}
+.up{color:#6ee7a0}.down{color:#fca5a5}
+.seg{display:flex;background:var(--panel2);border-radius:10px;padding:3px;gap:3px;margin:0 0 10px}
+.seg button{flex:1;background:transparent;border:none;padding:8px 4px;border-radius:8px;font-weight:600;color:var(--muted);font-size:14px}
+.seg button.on{background:var(--purple);color:#fff}
+svg.half{width:100%;display:block}
+.floor{fill:var(--floor)}
+.cl rect,.cl circle,.cl line,.cl path{fill:none;stroke:var(--courtline);stroke-width:.22}
+.cl .lane{fill:var(--lane)}
+.cl .rim{stroke:#ff8a3d;stroke-width:.3}
+.half text{fill:var(--muted);font-family:var(--head);font-weight:700;font-size:2.2px}
+.legend{display:flex;gap:14px;justify-content:center;font-size:13px;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{padding:8px 6px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-family:var(--head);font-weight:700;font-size:16px;color:var(--muted)}
+td small{color:var(--muted);margin-left:4px;font-size:12px}
+.dash{color:var(--line)}
+svg.trend{width:100%;height:auto;display:block}
+.trend .grid{stroke:var(--line);stroke-width:1}
+.trend .axis{fill:var(--muted);font-size:13px;font-family:var(--body)}
+.trend .thr{stroke:var(--green);stroke-dasharray:5 5;stroke-width:1.5;opacity:.7}
+.trend .l3{fill:none;stroke:var(--gold);stroke-width:3}.trend .l3-pt{fill:var(--gold)}
+.trend .l2{fill:none;stroke:var(--purple2);stroke-width:3}.trend .l2-pt{fill:var(--purple2)}
+.trend .lf{fill:none;stroke:#d9d0ec;stroke-width:2;stroke-dasharray:6 4}.trend .lf-pt{fill:#d9d0ec}
+.badges{display:flex;flex-wrap:wrap;gap:8px}
+.bd{background:var(--panel2);border-radius:10px;padding:8px 12px;font-weight:600;font-size:15px}
+.bd b{font-family:var(--head);font-size:20px;margin-left:4px}
+.tagline{margin:20px auto 6px;text-align:center;font-family:var(--head);font-weight:700;font-size:16px;color:var(--muted);line-height:1.3}
+</style>
+</head>
+<body>
+<header>
+  <img src="icon-192.png" alt="Westbrook Knights crest">
+  <div><h1 id="title">My Shooting</h1><div class="sub" id="updated">Loading…</div></div>
+  <button class="refresh" id="refresh">Refresh</button>
+</header>
+<main id="main"><div class="empty">Loading your shots…</div></main>
+<script>
+(function(){
+'use strict';
+let SHEET_URL = ''; // optional; if blank, uses the one in index.html
+
+const GREEN=33, MIN=10, WIN=14, RIM=5.25;
+const TAGLINE='We are resilient, we are disciplined, we are relentless, we are united...we are Knights.';
+const ZONES=['Rim','Paint','Midrange','Corner 3','Wing 3','Top 3'];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const dayKey=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const daysAgoKey=n=>{const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-n);return dayKey(d);};
+const prettyDay=k=>{const p=k.split('-').map(Number);return new Date(p[0],p[1]-1,p[2]).toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});};
+const shortDay=k=>{const p=k.split('-');return (+p[1])+'/'+(+p[2]);};
+const r1=n=>Math.round(n*10)/10;
+function pcode(id){let h=2166136261;const s=id+'|knights';for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(36).slice(0,6);}
+
+const CODE=(new URLSearchParams(location.search).get('p')||'').trim();
+const CK='knightsMe_'+CODE;
+let D={shots:[],players:[]},loadErr=null,range='last';
+try{const c=JSON.parse(localStorage.getItem(CK));if(c&&c.shots)D=c;}catch(e){}
+
+function me(){return D.players.find(p=>pcode(p.id)===CODE);}
+function zoneOf(s){
+  if(s.type==='3'){if(s.d<=14)return 'Corner 3';if(Math.abs(s.lat)<=8)return 'Top 3';return 'Wing 3';}
+  if(Math.hypot(s.d-RIM,s.lat)<=4)return 'Rim';
+  if(Math.abs(s.lat)<=6&&s.d<=19)return 'Paint';
+  return 'Midrange';
+}
+function sideOf(s){if(s.type==='FT'||s.lat==null)return null;if(Math.abs(s.lat)<=3)return 'Middle';return s.lat<0?'Right':'Left';}
+function agg(sh){const a={m2:0,a2:0,m3:0,a3:0,mf:0,af:0};for(const s of sh){if(s.type==='FT'){a.af++;if(s.made)a.mf++;}else if(s.type==='3'){a.a3++;if(s.made)a.m3++;}else{a.a2++;if(s.made)a.m2++;}}a.m=a.m2+a.m3;a.a=a.a2+a.a3;return a;}
+const pc=(m,a)=>a?Math.round(m/a*100)+'%':'—';
+const cell=(m,a)=>a?`<b>${Math.round(m/a*100)}%</b><small>${m}/${a}</small>`:'<span class="dash">—</span>';
+function runMax(sh){const s=sh.slice().sort((a,b)=>a.t-b.t);let c=0,m=0;for(const x of s){c=x.made?c+1:0;if(c>m)m=c;}return m;}
+
+async function findUrl(){
+  if(SHEET_URL)return SHEET_URL;
+  const t=await (await fetch('./index.html?fresh='+Date.now(),{cache:'no-store'})).text();
+  const m=t.match(/const SHEET_URL\s*=\s*'([^']*)'/);SHEET_URL=m&&m[1]?m[1]:'';return SHEET_URL;
+}
+async function load(){
+  $('#refresh').classList.add('spin');$('#refresh').textContent='Loading';
+  try{
+    const url=await findUrl();if(!url)throw new Error('nourl');
+    const j=await (await fetch(url+(url.indexOf('?')>-1?'&':'?')+'t='+Date.now())).json();
+    if(!j.ok)throw new Error('sheet');
+    const p=j.players.find(x=>pcode(x.id)===CODE);
+    D={players:p?[p]:[],shots:p?j.shots.filter(s=>s.p===p.id):[],at:Date.now()};loadErr=null;
+    try{localStorage.setItem(CK,JSON.stringify(D));}catch(e){}
+  }catch(e){loadErr=e.message==='nourl'?'nourl':'offline';}
+  $('#refresh').classList.remove('spin');$('#refresh').textContent='Refresh';
+  $('#updated').textContent=D.at?'Updated '+new Date(D.at).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'}):'Not loaded yet';
+  render();
+}
+
+function heroHTML(){
+  const start=daysAgoKey(WIN-1);
+  const th=D.shots.filter(s=>s.type==='3'&&s.day>=start);
+  const m=th.filter(s=>s.made).length,a=th.length,g=GREEN/100;
+  const pct=a?m/a*100:0;
+  if(a<MIN){
+    const need=MIN-a;
+    return `<div class="hero"><div class="lbl">3PT CLUB · LAST ${WIN} DAYS</div><div class="club">Almost there</div>
+      <div class="big"><span class="pct">${a?Math.round(pct)+'%':'—'}</span><span class="of">${m} of ${a} threes</span></div>
+      <div class="goal">Take <b>${need} more three${need===1?'':'s'}</b> in practice to qualify for a club. Hit ${GREEN}% or better and you’re in the Green Club.</div>
+      <div class="bar"><i style="width:${a/MIN*100}%"></i></div><div class="barlbl"><span>${a} attempts</span><span>${MIN} to qualify</span></div></div>`;
+  }
+  if(pct>=GREEN){
+    const cushion=Math.floor(m/g-a+1e-9);
+    return `<div class="hero green"><div class="lbl">3PT CLUB · LAST ${WIN} DAYS</div><div class="club">🟢 Green Club</div>
+      <div class="big"><span class="pct">${Math.round(pct)}%</span><span class="of">${m} of ${a} threes</span></div>
+      <div class="goal">${cushion>0?`You could miss your next <b>${cushion}</b> three${cushion===1?'':'s'} and still be green. Keep stacking makes.`:'You’re right on the line. Your next make keeps you safely in.'}</div>
+      ${barHTML(pct)}</div>`;
+  }
+  const k=Math.ceil((g*a-m)/(1-g)-1e-9);
+  return `<div class="hero red"><div class="lbl">3PT CLUB · LAST ${WIN} DAYS</div><div class="club">Red Club</div>
+    <div class="big"><span class="pct">${Math.round(pct)}%</span><span class="of">${m} of ${a} threes</span></div>
+    <div class="goal">Make <b>${k} three${k===1?'':'s'}</b> in a row to reach the Green Club. Old shots also drop off after ${WIN} days, so every practice is a fresh chance.</div>
+    ${barHTML(pct)}</div>`;
+}
+function barHTML(pct){return `<div class="bar"><i style="width:${Math.min(pct/60*100,100)}%"></i><u style="left:${GREEN/60*100}%"></u></div><div class="barlbl"><span>0%</span><span>Green line ${GREEN}%</span><span>60%</span></div>`;}
+
+function lastHTML(){
+  const days=[...new Set(D.shots.map(s=>s.day))].sort();
+  if(!days.length)return '';
+  const last=days[days.length-1];const a=agg(D.shots.filter(s=>s.day===last));
+  const w=agg(D.shots.filter(s=>s.day>=daysAgoKey(WIN-1)));
+  const cmp=(m,n,M,N)=>{if(!n||!N)return '';const d=Math.round(m/n*100-M/N*100);return d===0?'even with avg':`<span class="${d>0?'up':'down'}">${d>0?'▲':'▼'} ${Math.abs(d)} vs avg</span>`;};
+  return `<div class="box"><h3>Last practice</h3><div class="note" style="margin:-4px 0 10px">${prettyDay(last)}</div>
+    <div class="cards">
+      <div class="card"><div class="k">3PT</div><div class="v">${pc(a.m3,a.a3)}</div><div class="s">${a.m3}/${a.a3}<br>${cmp(a.m3,a.a3,w.m3,w.a3)}</div></div>
+      <div class="card"><div class="k">2PT</div><div class="v">${pc(a.m2,a.a2)}</div><div class="s">${a.m2}/${a.a2}<br>${cmp(a.m2,a.a2,w.m2,w.a2)}</div></div>
+      <div class="card"><div class="k">FT</div><div class="v">${pc(a.mf,a.af)}</div><div class="s">${a.mf}/${a.af}<br>${cmp(a.mf,a.af,w.mf,w.af)}</div></div>
+    </div><p class="note">Compared to your ${WIN}-day average.</p></div>`;
+}
+function rangeShots(){
+  if(range==='last'){const days=[...new Set(D.shots.map(s=>s.day))].sort();const l=days[days.length-1];return D.shots.filter(s=>s.day===l);}
+  if(range==='window')return D.shots.filter(s=>s.day>=daysAgoKey(WIN-1));
+  return D.shots;
+}
+function halfCourt(sh){
+  return `<svg class="half" viewBox="-1 -1 52 49"><rect class="floor" x="-1" y="-1" width="52" height="49" rx="1"/>
+    <g class="cl"><rect x="0" y="0" width="50" height="47"/><rect class="lane" x="19" y="0" width="12" height="19"/>
+    <circle cx="25" cy="19" r="6"/><line x1="22" y1="4" x2="28" y2="4"/><circle class="rim" cx="25" cy="5.25" r=".75"/>
+    <path d="M5.25 0 L5.25 5.25 A19.75 19.75 0 0 0 44.75 5.25 L44.75 0"/><path d="M19 47 A6 6 0 0 1 31 47"/></g>
+    <text x="1.2" y="45.6">LEFT</text><text x="48.8" y="45.6" text-anchor="end">RIGHT</text>
+    ${sh.filter(s=>s.type!=='FT'&&s.lat!=null).map(s=>{const x=r1(25-s.lat),y=s.d;return s.made?`<circle cx="${x}" cy="${y}" r=".6" fill="#22c55e" stroke="#063b19" stroke-width=".15"/>`:`<g stroke="#ef4444" stroke-width=".38" stroke-linecap="round"><line x1="${x-.48}" y1="${y-.48}" x2="${x+.48}" y2="${y+.48}"/><line x1="${x-.48}" y1="${y+.48}" x2="${x+.48}" y2="${y-.48}"/></g>`;}).join('')}</svg>`;
+}
+function trend(){
+  const days=[...new Set(D.shots.map(s=>s.day))].sort().slice(-12);
+  if(!days.length)return '<div class="empty">No practice shots yet.</div>';
+  const W=360,H=200,L=44,R=10,T=10,B=28,iw=W-L-R,ih=H-T-B;
+  const x=i=>L+(days.length===1?iw/2:i*iw/(days.length-1)),y=p=>T+ih*(1-p/100);
+  const ser=t=>days.map((d,i)=>{const sh=D.shots.filter(s=>s.day===d&&s.type===t);const m=sh.filter(s=>s.made).length;return sh.length?{i,p:m/sh.length*100}:null;}).filter(Boolean);
+  const line=(pts,c)=>(pts.length>1?`<path class="${c}" d="${pts.map((p,j)=>(j?'L':'M')+x(p.i).toFixed(1)+' '+y(p.p).toFixed(1)).join(' ')}"/>`:'')+pts.map(p=>`<circle class="${c}-pt" cx="${x(p.i).toFixed(1)}" cy="${y(p.p).toFixed(1)}" r="4"/>`).join('');
+  let g='';[0,50,100].forEach(v=>{g+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${L-5}" y="${y(v)+4}" text-anchor="end">${v}%</text>`;});
+  const step=Math.ceil(days.length/5);days.forEach((d,i)=>{if(i%step===0||i===days.length-1)g+=`<text class="axis" x="${x(i)}" y="${H-8}" text-anchor="middle">${shortDay(d)}</text>`;});
+  g+=`<line class="thr" x1="${L}" x2="${W-R}" y1="${y(GREEN)}" y2="${y(GREEN)}"/>`;
+  return `<svg class="trend" viewBox="0 0 ${W} ${H}">${g}${line(ser('FT'),'lf')}${line(ser('2'),'l2')}${line(ser('3'),'l3')}</svg>
+  <div class="legend"><span><i style="background:var(--gold)"></i>3PT</span><span><i style="background:var(--purple2)"></i>2PT</span><span><i style="background:#d9d0ec"></i>FT</span><span><i style="background:var(--green);border-radius:0;height:2px"></i>Green line</span></div>`;
+}
+function badgesHTML(){
+  const out={fire:0,sniper:0,auto:0};
+  [...new Set(D.shots.map(s=>s.day))].forEach(d=>{const sh=D.shots.filter(s=>s.day===d);
+    if(runMax(sh.filter(s=>s.type!=='FT'))>=5)out.fire++;
+    if(sh.filter(s=>s.type==='3'&&s.made).length>=5)out.sniper++;
+    if(runMax(sh.filter(s=>s.type==='FT'))>=10)out.auto++;});
+  return `<div class="box"><h3>Season badges</h3><div class="badges">
+    <span class="bd">🔥 On fire<b>×${out.fire}</b></span><span class="bd">🎯 Sniper<b>×${out.sniper}</b></span><span class="bd">💯 Automatic<b>×${out.auto}</b></span></div>
+    <p class="note">On fire: 5 straight makes. Sniper: 5 threes made in a practice. Automatic: 10 straight free throws.</p></div>`;
+}
+function render(){
+  const m=$('#main');
+  if(!CODE){m.innerHTML='<div class="err">This link is missing your player code. Ask Coach for your personal link.</div>';return;}
+  const p=me();
+  let err='';
+  if(loadErr==='offline')err=`<div class="err">Couldn’t reach the stats sheet. ${D.at?'Showing what loaded last time.':'Check your connection and tap Refresh.'}</div>`;
+  if(loadErr==='nourl')err='<div class="err">The stats sheet isn’t set up yet. Let Coach know.</div>';
+  if(!p){m.innerHTML=err+(D.at?'<div class="err">This link doesn’t match a player on the roster. Ask Coach for a new link.</div>':'<div class="empty">Loading your shots…</div>');return;}
+  $('#title').textContent=p.name+'’s Shooting';document.title=p.name+' · Knights Shooting';
+  if(!D.shots.length){m.innerHTML=err+heroHTML()+'<div class="empty">No practice shots logged yet. Check back after practice.</div>'+`<div class="tagline">${TAGLINE}</div>`;return;}
+  const sh=rangeShots();const z={};ZONES.forEach(k=>z[k]={m:0,a:0});sh.forEach(s=>{if(s.type==='FT')return;const k=zoneOf(s);z[k].a++;if(s.made)z[k].m++;});
+  m.innerHTML=err+heroHTML()+lastHTML()+
+   `<div class="box"><h3>Shot chart</h3>
+     <div class="seg">${[['last','Last practice'],['window',`${WIN} days`],['season','Season']].map(([k,l])=>`<button data-r="${k}" class="${range===k?'on':''}">${l}</button>`).join('')}</div>
+     ${halfCourt(sh)}<div class="legend"><span><i style="background:var(--green)"></i>Make</span><span><i style="background:var(--red)"></i>Miss</span></div></div>
+    <div class="box"><h3>Left vs right</h3><table><thead><tr><th>Side</th><th>2PT</th><th>3PT</th><th>FG</th></tr></thead><tbody>
+      ${['Left','Middle','Right'].map(k=>{const b=agg(sh.filter(s=>sideOf(s)===k));return `<tr><td>${k}</td><td>${cell(b.m2,b.a2)}</td><td>${cell(b.m3,b.a3)}</td><td>${cell(b.m,b.a)}</td></tr>`;}).join('')}
+    </tbody></table><p class="note">From your view facing the basket. Uses the range picked above.</p></div>
+    <div class="box"><h3>By zone</h3><table><tbody>${ZONES.map(k=>`<tr><td>${k}</td><td>${z[k].m}/${z[k].a}</td><td><b>${pc(z[k].m,z[k].a)}</b></td></tr>`).join('')}</tbody></table></div>
+    <div class="box"><h3>Practice by practice</h3>${trend()}</div>`+badgesHTML()+`<div class="tagline">${TAGLINE}</div>`;
+}
+document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;if(t.id==='refresh')load();else if(t.dataset.r){range=t.dataset.r;render();}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&(!D.at||Date.now()-D.at>60000))load();});
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+if(D.at){$('#updated').textContent='Updated '+new Date(D.at).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'});}
+render();load();
+})();
+</script>
+</body>
+</html>
