@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Knights Stats">
+<meta name="theme-color" content="#1a0f2e">
+<title>Knights Stats</title>
+<link rel="manifest" href="coach.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#130b22; --panel:#1d1235; --panel2:#281849; --line:#3b2a60;
+  --purple:#5b2ea6; --purple2:#8a5cff; --text:#f4effd; --muted:#ab9dc8;
+  --green:#22c55e; --red:#ef4444; --gold:#f5c542;
+  --floor:#21143b; --lane:#2d1a52; --courtline:rgba(255,255,255,.82);
+  --head:'Barlow Condensed','Arial Narrow',system-ui,sans-serif;
+  --body:'Barlow',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--body)}
+body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+button{font-family:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+header{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;
+  padding:calc(10px + env(safe-area-inset-top)) 14px 10px;background:linear-gradient(90deg,#2b1552,#170d2b);border-bottom:2px solid var(--purple)}
+header img{width:38px;height:38px;border-radius:8px}
+header h1{font-family:var(--head);font-weight:800;font-size:23px;margin:0;line-height:1}
+header .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.refresh{margin-left:auto;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-weight:600;font-size:14px}
+.refresh.spin{opacity:.5}
+main{padding:12px 14px;max-width:640px;margin:0 auto}
+h2{font-family:var(--head);font-weight:800;font-size:26px;margin:4px 0 4px}
+h3{font-family:var(--head);font-weight:700;font-size:20px;margin:0 0 8px}
+.note{font-size:13px;color:var(--muted);line-height:1.4;margin:2px 0 12px}
+.empty{color:var(--muted);font-size:15px;padding:8px 2px}
+
+/* clubs */
+.club{border-radius:14px;padding:12px;border:2px solid;margin-bottom:12px}
+.club.green{border-color:var(--green);background:linear-gradient(180deg,rgba(34,197,94,.14),rgba(34,197,94,.03))}
+.club.red{border-color:var(--red);background:linear-gradient(180deg,rgba(239,68,68,.14),rgba(239,68,68,.03))}
+.club h3{font-size:26px;font-weight:800}
+.club.green h3{color:#6ee7a0}.club.red h3{color:#fca5a5}
+.row{display:grid;grid-template-columns:1fr auto;align-items:center;background:rgba(0,0,0,.22);border-radius:10px;padding:9px 12px;margin-top:7px;width:100%;border:none;text-align:left}
+.row .n{font-family:var(--head);font-weight:800;font-size:22px}
+.row .p{font-family:var(--head);font-weight:800;font-size:26px;text-align:right}
+.row .m{font-size:13px;color:var(--muted)}
+.row .d{font-size:13px;text-align:right;font-weight:600}
+.up{color:#6ee7a0}.down{color:#fca5a5}
+.wait{background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:12px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{background:var(--panel2);border-radius:9px;padding:6px 10px;font-size:14px}
+.chip b{font-family:var(--head);font-size:17px;margin-right:5px}
+
+/* players list */
+.pl{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:8px;width:100%;text-align:left}
+.pl .n{font-family:var(--head);font-weight:800;font-size:23px}
+.pl .s{grid-column:1/-1;font-size:14px;color:var(--muted)}
+.pl .s b{color:var(--text);font-weight:600}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-weight:700;font-size:12px;white-space:nowrap}
+.badge.green{background:rgba(34,197,94,.18);color:#6ee7a0;border:1px solid rgba(34,197,94,.5)}
+.badge.red{background:rgba(239,68,68,.16);color:#fca5a5;border:1px solid rgba(239,68,68,.5)}
+.badge.pending{color:var(--muted);border:1px dashed var(--line)}
+
+/* detail */
+.back{background:none;border:none;color:var(--purple2);font-weight:600;font-size:16px;padding:4px 0;margin-bottom:4px}
+.seg{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin:6px 0 12px}
+.seg button{flex:1;background:transparent;border:none;padding:9px 4px;border-radius:8px;font-weight:600;color:var(--muted);font-size:14px}
+.seg button.on{background:var(--purple);color:#fff}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 12px}
+.card .k{font-size:13px;color:var(--muted)}
+.card .v{font-family:var(--head);font-weight:800;font-size:30px;line-height:1.1}
+.card .s{font-size:13px;color:var(--muted)}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
+svg.half{width:100%;display:block}
+.floor{fill:var(--floor)}
+.cl rect,.cl circle,.cl line,.cl path{fill:none;stroke:var(--courtline);stroke-width:.22}
+.cl .lane{fill:var(--lane)}
+.cl .rim{stroke:#ff8a3d;stroke-width:.3}
+.half text{fill:var(--muted);font-family:var(--head);font-weight:700;font-size:2.2px}
+.legend{display:flex;gap:14px;justify-content:center;font-size:13px;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{padding:8px 6px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-family:var(--head);font-weight:700;font-size:16px;color:var(--muted)}
+td small{color:var(--muted);margin-left:4px;font-size:12px}
+.dash{color:var(--line)}
+svg.trend{width:100%;height:auto;display:block}
+.trend .grid{stroke:var(--line);stroke-width:1}
+.trend .axis{fill:var(--muted);font-size:13px;font-family:var(--body)}
+.trend .thr{stroke:var(--green);stroke-dasharray:5 5;stroke-width:1.5;opacity:.7}
+.trend .l3{fill:none;stroke:var(--gold);stroke-width:3}.trend .l3-pt{fill:var(--gold)}
+.trend .l2{fill:none;stroke:var(--purple2);stroke-width:3}.trend .l2-pt{fill:var(--purple2)}
+.trend .lf{fill:none;stroke:#d9d0ec;stroke-width:2;stroke-dasharray:6 4}.trend .lf-pt{fill:#d9d0ec}
+
+/* today */
+.tot{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.tt td:first-child{font-family:var(--head);font-weight:700;font-size:18px}
+
+nav{position:fixed;left:0;right:0;bottom:0;z-index:10;display:flex;background:#1a0f2e;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:none;padding:12px 0 14px;font-family:var(--head);font-weight:700;font-size:18px;color:var(--muted)}
+nav button.on{color:#fff;box-shadow:inset 0 3px 0 var(--gold)}
+.tagline{margin:20px auto 6px;text-align:center;font-family:var(--head);font-weight:700;font-size:16px;color:var(--muted);line-height:1.3}
+.err{background:rgba(245,197,66,.12);border:1px solid rgba(245,197,66,.5);color:var(--gold);border-radius:12px;padding:12px;font-size:14px;margin-bottom:12px}
+</style>
+</head>
+<body>
+<header>
+  <img src="icon-192.png" alt="Westbrook Knights crest">
+  <div><h1>Knights Stats</h1><div class="sub" id="updated">Loading…</div></div>
+  <button class="refresh" id="refresh">Refresh</button>
+</header>
+<main id="main"><div class="empty">Loading the latest shots…</div></main>
+<nav>
+  <button data-v="clubs" class="on">Clubs</button>
+  <button data-v="players">Players</button>
+  <button data-v="today">Today</button>
+</nav>
+<script>
+(function(){
+'use strict';
+/* Optional: paste the Google Apps Script web app URL here. If left blank, this page uses the one in index.html. */
+let SHEET_URL = '';
+
+const GREEN=33, MIN=10, WIN=14, RIM=5.25;
+const TAGLINE='We are resilient, we are disciplined, we are relentless, we are united...we are Knights.';
+const ZONES=['Rim','Paint','Midrange','Corner 3','Wing 3','Top 3'];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const dayKey=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const todayKey=()=>dayKey(new Date());
+const daysAgoKey=n=>{const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-n);return dayKey(d);};
+const prettyDay=k=>{const p=k.split('-').map(Number);return new Date(p[0],p[1]-1,p[2]).toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});};
+const shortDay=k=>{const p=k.split('-');return (+p[1])+'/'+(+p[2]);};
+const r1=n=>Math.round(n*10)/10;
+
+let D={shots:[],players:[]},view='clubs',plId=null,plRange='window',loaded=false,loadErr=null;
+try{const c=JSON.parse(localStorage.getItem('knightsCoachCache'));if(c&&c.shots)D=c;}catch(e){}
+
+function pname(id){const p=D.players.find(p=>p.id===id);return p?p.name:'(removed)';}
+function zoneOf(s){
+  if(s.type==='FT')return 'Free throw';
+  if(s.type==='3'){if(s.d<=14)return 'Corner 3';if(Math.abs(s.lat)<=8)return 'Top 3';return 'Wing 3';}
+  if(Math.hypot(s.d-RIM,s.lat)<=4)return 'Rim';
+  if(Math.abs(s.lat)<=6&&s.d<=19)return 'Paint';
+  return 'Midrange';
+}
+function sideOf(s){if(s.type==='FT'||s.lat==null)return null;if(Math.abs(s.lat)<=3)return 'Middle';return s.lat<0?'Right':'Left';}
+function agg(sh){const a={m2:0,a2:0,m3:0,a3:0,mf:0,af:0};for(const s of sh){if(s.type==='FT'){a.af++;if(s.made)a.mf++;}else if(s.type==='3'){a.a3++;if(s.made)a.m3++;}else{a.a2++;if(s.made)a.m2++;}}a.m=a.m2+a.m3;a.a=a.a2+a.a3;return a;}
+const pc=(m,a)=>a?Math.round(m/a*100)+'%':'—';
+const cell=(m,a)=>a?`<b>${Math.round(m/a*100)}%</b><small>${m}/${a}</small>`:'<span class="dash">—</span>';
+function rangeShots(r){if(r==='today'){const k=todayKey();return D.shots.filter(s=>s.day===k);}if(r==='window'){const k=daysAgoKey(WIN-1);return D.shots.filter(s=>s.day>=k);}return D.shots;}
+function windowThrees(pid,off){off=off||0;const a=daysAgoKey(off+WIN-1),b=daysAgoKey(off);return D.shots.filter(s=>s.p===pid&&s.type==='3'&&s.day>=a&&s.day<=b);}
+function club(pid){const sh=windowThrees(pid);const m=sh.filter(s=>s.made).length,a=sh.length;if(a<MIN)return{status:'pending',m,a,p:a?m/a*100:null};const p=m/a*100;return{status:p>=GREEN?'green':'red',m,a,p};}
+function badge(c){return c.status==='green'?'<span class="badge green">Green Club</span>':c.status==='red'?'<span class="badge red">Red Club</span>':`<span class="badge pending">${c.a}/${MIN} 3PA</span>`;}
+const active=()=>D.players.filter(p=>p.active);
+
+/* ---------- data ---------- */
+async function findUrl(){
+  if(SHEET_URL)return SHEET_URL;
+  const res=await fetch('./index.html?fresh='+Date.now(),{cache:'no-store'});
+  const t=await res.text();const m=t.match(/const SHEET_URL\s*=\s*'([^']*)'/);
+  SHEET_URL=m&&m[1]?m[1]:'';return SHEET_URL;
+}
+async function load(){
+  $('#refresh').classList.add('spin');$('#refresh').textContent='Loading';
+  try{
+    const url=await findUrl();
+    if(!url)throw new Error('nourl');
+    const res=await fetch(url+(url.indexOf('?')>-1?'&':'?')+'t='+Date.now());
+    const j=await res.json();if(!j.ok)throw new Error(j.error||'sheet');
+    D={shots:j.shots,players:j.players,at:Date.now()};loadErr=null;
+    try{localStorage.setItem('knightsCoachCache',JSON.stringify(D));}catch(e){}
+  }catch(e){loadErr=e.message==='nourl'?'nourl':'offline';}
+  loaded=true;
+  $('#refresh').classList.remove('spin');$('#refresh').textContent='Refresh';
+  $('#updated').textContent=D.at?'Updated '+new Date(D.at).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'}):'Not loaded yet';
+  render();
+}
+
+/* ---------- views ---------- */
+function errBox(){
+  if(!loadErr)return '';
+  if(loadErr==='nourl')return '<div class="err">This page can’t find the Google Sheet link. Make sure the SHEET_URL line in index.html has your web app URL.</div>';
+  return `<div class="err">Couldn’t reach the Google Sheet. ${D.at?'Showing what was loaded last time.':'Check your connection and tap Refresh.'}</div>`;
+}
+function render(){
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===(view==='player'?'players':view)));
+  const m=$('#main');
+  if(!loaded&&!D.at){m.innerHTML='<div class="empty">Loading the latest shots…</div>';return;}
+  m.innerHTML=errBox()+({clubs:vClubs,players:vPlayers,player:vPlayer,today:vToday})[view]()+`<div class="tagline">${TAGLINE}</div>`;
+  window.scrollTo(0,0);
+}
+function vClubs(){
+  const list=active().map(p=>{const c=club(p.id);const pr=windowThrees(p.id,WIN);const pa=pr.length,pm=pr.filter(s=>s.made).length;
+    return{p,c,delta:(c.status!=='pending'&&pa>=MIN)?c.p-pm/pa*100:null};});
+  const g=list.filter(x=>x.c.status==='green').sort((a,b)=>b.c.p-a.c.p);
+  const r=list.filter(x=>x.c.status==='red').sort((a,b)=>b.c.p-a.c.p);
+  const n=list.filter(x=>x.c.status==='pending').sort((a,b)=>b.c.a-a.c.a);
+  const row=x=>`<button class="row" data-pl="${x.p.id}"><span class="n">${esc(x.p.name)}</span><span class="p">${Math.round(x.c.p)}%</span><span class="m">${x.c.m} of ${x.c.a} threes</span><span class="d ${x.delta==null?'':x.delta>=0?'up':'down'}">${x.delta==null?'':(x.delta>=0?'▲ ':'▼ ')+Math.abs(Math.round(x.delta))+' pts'}</span></button>`;
+  return `<h2>3PT clubs</h2><p class="note">Practice threes, last ${WIN} days. ${GREEN}%+ on ${MIN}+ attempts makes the Green Club. Arrows compare to the ${WIN} days before.</p>
+    <div class="club green"><h3>Green Club</h3>${g.map(row).join('')||'<div class="empty">No one yet.</div>'}</div>
+    <div class="club red"><h3>Red Club</h3>${r.map(row).join('')||'<div class="empty">No one in the Red Club.</div>'}</div>
+    ${n.length?`<div class="wait"><h3>Not enough attempts yet</h3><div class="chips">${n.map(x=>`<span class="chip"><b>${esc(x.p.name)}</b>${x.c.a} of ${MIN}</span>`).join('')}</div></div>`:''}`;
+}
+function vPlayers(){
+  const sh=rangeShots('window');
+  return `<h2>Players</h2><p class="note">Last ${WIN} days. Tap a player for their shot chart.</p>`+
+    active().map(p=>{const a=agg(sh.filter(s=>s.p===p.id));const c=club(p.id);
+      return `<button class="pl" data-pl="${p.id}"><span class="n">${esc(p.name)}</span>${badge(c)}<span class="s">3PT <b>${pc(a.m3,a.a3)}</b> (${a.m3}/${a.a3}) &nbsp; 2PT <b>${pc(a.m2,a.a2)}</b> &nbsp; FT <b>${pc(a.mf,a.af)}</b></span></button>`;}).join('');
+}
+function halfCourt(sh){
+  return `<svg class="half" viewBox="-1 -1 52 49"><rect class="floor" x="-1" y="-1" width="52" height="49" rx="1"/>
+    <g class="cl"><rect x="0" y="0" width="50" height="47"/><rect class="lane" x="19" y="0" width="12" height="19"/>
+    <circle cx="25" cy="19" r="6"/><line x1="22" y1="4" x2="28" y2="4"/><circle class="rim" cx="25" cy="5.25" r=".75"/>
+    <path d="M5.25 0 L5.25 5.25 A19.75 19.75 0 0 0 44.75 5.25 L44.75 0"/><path d="M19 47 A6 6 0 0 1 31 47"/></g>
+    <text x="1.2" y="45.6">LEFT</text><text x="48.8" y="45.6" text-anchor="end">RIGHT</text>
+    ${sh.filter(s=>s.type!=='FT'&&s.lat!=null).map(s=>{const x=r1(25-s.lat),y=s.d;return s.made?`<circle cx="${x}" cy="${y}" r=".6" fill="#22c55e" stroke="#063b19" stroke-width=".15"/>`:`<g stroke="#ef4444" stroke-width=".38" stroke-linecap="round"><line x1="${x-.48}" y1="${y-.48}" x2="${x+.48}" y2="${y+.48}"/><line x1="${x-.48}" y1="${y+.48}" x2="${x+.48}" y2="${y-.48}"/></g>`;}).join('')}</svg>`;
+}
+function trend(pid){
+  const days=[...new Set(D.shots.filter(s=>s.p===pid).map(s=>s.day))].sort().slice(-12);
+  if(!days.length)return '<div class="empty">No practice shots yet.</div>';
+  const W=360,H=200,L=44,R=10,T=10,B=28,iw=W-L-R,ih=H-T-B;
+  const x=i=>L+(days.length===1?iw/2:i*iw/(days.length-1)),y=p=>T+ih*(1-p/100);
+  const ser=t=>days.map((d,i)=>{const sh=D.shots.filter(s=>s.p===pid&&s.day===d&&s.type===t);const m=sh.filter(s=>s.made).length;return sh.length?{i,p:m/sh.length*100}:null;}).filter(Boolean);
+  const line=(pts,c)=>(pts.length>1?`<path class="${c}" d="${pts.map((p,j)=>(j?'L':'M')+x(p.i).toFixed(1)+' '+y(p.p).toFixed(1)).join(' ')}"/>`:'')+pts.map(p=>`<circle class="${c}-pt" cx="${x(p.i).toFixed(1)}" cy="${y(p.p).toFixed(1)}" r="4"/>`).join('');
+  let g='';[0,50,100].forEach(v=>{g+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${L-5}" y="${y(v)+4}" text-anchor="end">${v}%</text>`;});
+  const step=Math.ceil(days.length/5);days.forEach((d,i)=>{if(i%step===0||i===days.length-1)g+=`<text class="axis" x="${x(i)}" y="${H-8}" text-anchor="middle">${shortDay(d)}</text>`;});
+  g+=`<line class="thr" x1="${L}" x2="${W-R}" y1="${y(GREEN)}" y2="${y(GREEN)}"/>`;
+  return `<svg class="trend" viewBox="0 0 ${W} ${H}">${g}${line(ser('FT'),'lf')}${line(ser('2'),'l2')}${line(ser('3'),'l3')}</svg>
+  <div class="legend"><span><i style="background:var(--gold)"></i>3PT</span><span><i style="background:var(--purple2)"></i>2PT</span><span><i style="background:#d9d0ec"></i>FT</span><span><i style="background:var(--green);border-radius:0;height:2px"></i>Green line</span></div>`;
+}
+function vPlayer(){
+  const p=D.players.find(x=>x.id===plId);if(!p){view='players';return vPlayers();}
+  const sh=rangeShots(plRange).filter(s=>s.p===plId);const a=agg(sh);const c=club(plId);
+  const z={};ZONES.forEach(k=>z[k]={m:0,a:0});sh.forEach(s=>{if(s.type==='FT')return;const k=zoneOf(s);z[k].a++;if(s.made)z[k].m++;});
+  return `<button class="back" data-v="players">‹ All players</button>
+    <h2>${esc(p.name)} ${badge(c)}</h2>
+    <div class="seg">${[['today','Today'],['window',`${WIN} days`],['season','Season']].map(([k,l])=>`<button data-pr="${k}" class="${plRange===k?'on':''}">${l}</button>`).join('')}</div>
+    <div class="cards">
+      <div class="card"><div class="k">3PT</div><div class="v">${pc(a.m3,a.a3)}</div><div class="s">${a.m3} of ${a.a3}</div></div>
+      <div class="card"><div class="k">2PT</div><div class="v">${pc(a.m2,a.a2)}</div><div class="s">${a.m2} of ${a.a2}</div></div>
+      <div class="card"><div class="k">FG</div><div class="v">${pc(a.m,a.a)}</div><div class="s">${a.m} of ${a.a}</div></div>
+      <div class="card"><div class="k">FT</div><div class="v">${pc(a.mf,a.af)}</div><div class="s">${a.mf} of ${a.af}</div></div>
+    </div>
+    <div class="box"><h3>Shot chart</h3>${halfCourt(sh)}<div class="legend"><span><i style="background:var(--green)"></i>Make</span><span><i style="background:var(--red)"></i>Miss</span></div></div>
+    <div class="box"><h3>Left vs right</h3><table><thead><tr><th>Side</th><th>2PT</th><th>3PT</th><th>FG</th></tr></thead><tbody>
+      ${['Left','Middle','Right'].map(k=>{const b=agg(sh.filter(s=>sideOf(s)===k));return `<tr><td>${k}</td><td>${cell(b.m2,b.a2)}</td><td>${cell(b.m3,b.a3)}</td><td>${cell(b.m,b.a)}</td></tr>`;}).join('')}
+    </tbody></table><p class="note" style="margin:8px 0 0">From the shooter’s view facing the basket.</p></div>
+    <div class="box"><h3>By zone</h3><table><tbody>${ZONES.map(k=>`<tr><td>${k}</td><td>${z[k].m}/${z[k].a}</td><td><b>${pc(z[k].m,z[k].a)}</b></td></tr>`).join('')}</tbody></table></div>
+    <div class="box"><h3>Practice by practice</h3>${trend(plId)}</div>`;
+}
+function vToday(){
+  const k=todayKey();const sh=D.shots.filter(s=>s.day===k);
+  if(!sh.length){
+    const days=[...new Set(D.shots.map(s=>s.day))].sort();
+    const last=days[days.length-1];
+    return `<h2>Today</h2><div class="empty">No shots logged today yet.${last?' Last practice logged: '+prettyDay(last)+'.':''}</div>`;
+  }
+  const t=agg(sh);
+  return `<h2>Today</h2><p class="note">${prettyDay(k)}. ${sh.length} shots logged.</p>
+    <div class="tot"><div class="card"><div class="k">Team 3PT</div><div class="v">${pc(t.m3,t.a3)}</div><div class="s">${t.m3}/${t.a3}</div></div>
+    <div class="card"><div class="k">Team 2PT</div><div class="v">${pc(t.m2,t.a2)}</div><div class="s">${t.m2}/${t.a2}</div></div>
+    <div class="card"><div class="k">Team FT</div><div class="v">${pc(t.mf,t.af)}</div><div class="s">${t.mf}/${t.af}</div></div></div>
+    <div class="box"><table class="tt"><thead><tr><th>Player</th><th>3PT</th><th>2PT</th><th>FT</th></tr></thead><tbody>
+    ${active().map(p=>{const a=agg(sh.filter(s=>s.p===p.id));return `<tr data-pl="${p.id}"><td>${esc(p.name)}</td><td>${cell(a.m3,a.a3)}</td><td>${cell(a.m2,a.a2)}</td><td>${cell(a.mf,a.af)}</td></tr>`;}).join('')}
+    </tbody></table></div>`;
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button,tr[data-pl]');if(!t)return;
+  if(t.id==='refresh'){load();return;}
+  if(t.dataset.pl){plId=t.dataset.pl;view='player';render();return;}
+  if(t.dataset.pr){plRange=t.dataset.pr;render();return;}
+  if(t.dataset.v){view=t.dataset.v;render();}
+});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&D.at&&Date.now()-D.at>60000)load();});
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+if(D.at){loaded=true;$('#updated').textContent='Updated '+new Date(D.at).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'});render();}
+load();
+})();
+</script>
+</body>
+</html>
