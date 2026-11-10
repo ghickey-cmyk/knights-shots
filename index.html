@@ -252,6 +252,9 @@ nav{margin-left:8px}
 .sidetbl td:first-child{font-weight:600}
 .half text{fill:var(--muted);font-family:var(--head);font-weight:700;font-size:2.2px}
 @media (max-width:980px){.actions{grid-template-columns:1fr 1fr 1fr}.actions .status{grid-column:1/-1}#court{max-height:none}}
+.fadeout{animation:fadeout 1.5s ease-in forwards}
+@keyframes fadeout{0%{opacity:1}60%{opacity:.8}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.fadeout{animation:none}}
 </style>
 </head>
 <body>
@@ -318,7 +321,7 @@ nav{margin-left:8px}
 (function(){
 'use strict';
 /* Paste the Google Apps Script web app URL between the quotes below. */
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwM4FDu3pCFbxILVwDoa6SqpF0j-Qc7QzFAPPCdEqNtGOO9UC1VNPp9WPWUVrWvRiB_CA/exec';
+const SHEET_URL = '';
 
 const LS='knightsShotTracker_v2';
 const DEFAULT_ROSTER=['Greg','Ryan','Griffin','Anthony','Tavin','Dylan','Drew','Josh','Jason'];
@@ -435,7 +438,7 @@ function renderMgr(){const m=mgr();$('#subLbl').textContent=m?`Tracked by ${m}, 
 function render(){renderMgr();({track:renderTrack,stats:renderStats,clubs:renderClubs,player:renderPlayer,setup:renderSetup})[view]();updateSync();}
 
 /* ---------- TRACK ---------- */
-let pending=null,pendingMade=null,ftMode=false,lastLogged=null;
+let pending=null,pendingMade=null,ftMode=false,lastLogged=null,justLogged=null,justT=null;
 const MILESTONES=[100,250,500,750,1000,1500,2000,2500,3000,4000,5000,6000,7500,10000];
 function mgr(){return (S.settings.manager||'').trim();}
 function greeting(){const h=new Date().getHours();return h<12?'Good morning':h<17?'Good afternoon':'Good evening';}
@@ -450,8 +453,8 @@ function renderTrack(){
     const a=agg(today.filter(s=>s.p===p.id));
     return `<button class="pbtn" data-pick="${p.id}"><span class="pn">${esc(p.name)}</span><span class="ps">3s ${a.m3}/${a.a3} &nbsp; 2s ${a.m2}/${a.a2}</span><span class="ps">FT ${a.mf}/${a.af}</span></button>`;
   }).join('')||'<div class="empty">No active players. Add or activate players in Setup.</div>';
-  const recent=today.filter(s=>s.type!=='FT').slice(-12);
-  $('#dots').innerHTML=recent.map((s,i)=>dotSVG(s.X,s.Y,s.made,.25+.75*(i+1)/recent.length)).join('')+
+  const flash=justLogged&&justLogged.type!=='FT'?`<g class="fadeout">${dotSVG(justLogged.X,justLogged.Y,justLogged.made)}</g>`:'';
+  $('#dots').innerHTML=flash+
     (pending&&!ftMode?`<circle class="pendmark" cx="${pending.X}" cy="${pending.Y}" r="1.1"/>`:'');
   renderPending();
 }
@@ -481,7 +484,7 @@ function courtTap(e){
   let d,lat;
   if(X<=47){d=X;lat=Y-25;}else{d=94-X;lat=25-Y;} // fold far end onto near end; lat < 0 is the shooter's right
   pending={X:r1(X),Y:r1(Y),d:r1(d),lat:r1(lat),type:isThree(d,lat)?'3':'2'};
-  pendingMade=null;
+  pendingMade=null;justLogged=null;
   renderTrack();
 }
 function toggleFT(){ftMode=!ftMode;pending=null;pendingMade=null;renderTrack();}
@@ -497,7 +500,7 @@ function pickPlayer(pid){
   const base=ftMode?{type:'FT',X:null,Y:null,d:null,lat:null}:{type:pending.type,X:pending.X,Y:pending.Y,d:pending.d,lat:pending.lat};
   const shot=Object.assign({id:uid(),p:pid,made:pendingMade,t:now.getTime(),day:dayKey(now),synced:false},base);
   S.shots.push(shot);save();
-  lastLogged=shot;
+  lastLogged=shot;justLogged=shot;clearTimeout(justT);justT=setTimeout(()=>{justLogged=null;if(view==='track')renderTrack();},1600);
   const made=pendingMade;pending=null;pendingMade=null;
   const w=$('#courtwrap');w.classList.remove('flash-make','flash-miss');void w.offsetWidth;w.classList.add(made?'flash-make':'flash-miss');
   setTimeout(()=>w.classList.remove('flash-make','flash-miss'),350);
