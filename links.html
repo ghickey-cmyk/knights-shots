@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knights Player Links</title>
+<style>
+body{margin:0;background:#130b22;color:#f4effd;font-family:system-ui,-apple-system,sans-serif;padding:20px}
+h1{font-size:26px;margin:0 0 6px}
+p{color:#ab9dc8;margin:0 0 16px}
+.row{display:flex;align-items:center;gap:10px;background:#1d1235;border:1px solid #3b2a60;border-radius:12px;padding:12px;margin-bottom:8px}
+.row b{font-size:20px;min-width:110px}
+.row input{flex:1;min-width:0;background:#281849;border:1px solid #3b2a60;color:#f4effd;border-radius:8px;padding:8px;font-size:14px}
+.row button{background:#5b2ea6;border:1px solid #8a5cff;color:#fff;border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer}
+.msg{color:#f5c542}
+</style>
+</head>
+<body>
+<h1>Knights Player Links</h1>
+<p>Copy a player's link and send it to them. They open it in Safari and tap Share, then Add to Home Screen.</p>
+<div id="list" class="msg">Loading roster…</div>
+<script>
+function pcode(id){let h=2166136261;const s=id+'|knights';for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(36).slice(0,6);}
+(async()=>{
+  const list=document.getElementById('list');
+  try{
+    const t=await (await fetch('./index.html?fresh='+Date.now(),{cache:'no-store'})).text();
+    const m=t.match(/const SHEET_URL\s*=\s*'([^']*)'/);
+    if(!m||!m[1]){list.textContent='Could not find the Sheet URL in index.html.';return;}
+    const j=await (await fetch(m[1]+'?t='+Date.now())).json();
+    const base=location.href.replace(/[^/]*$/,'');
+    const ps=j.players.filter(p=>p.active);
+    if(!ps.length){list.textContent='No active players found in the Sheet.';return;}
+    list.className='';
+    list.innerHTML=ps.map(p=>{const url=base+'me.html?p='+pcode(p.id);return `<div class="row"><b>${p.name}</b><input readonly value="${url}"><button data-u="${url}">Copy</button></div>`;}).join('');
+    list.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;navigator.clipboard.writeText(b.dataset.u).then(()=>{b.textContent='Copied!';setTimeout(()=>b.textContent='Copy',1500);});});
+  }catch(e){list.textContent='Could not load the roster. Check your connection and reload.';}
+})();
+</script>
+</body>
+</html>
